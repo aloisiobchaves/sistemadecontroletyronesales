@@ -117,7 +117,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="cnpj" class="form-label">CNPJ</label>
-                                <input type="text" class="form-control" id="cnpj" required placeholder="Somente números">
+                                <input type="text" class="form-control" id="cnpj" required placeholder="Somente números" inputmode="numeric" maxlength="14">
                                 <div class="d-flex justify-content-between mt-1">
                                     <span class="text-muted cnpj-help">Ao sair do campo, busco dados da Receita.</span>
                                     <span id="cnpjStatus" class="cnpj-status"></span>
@@ -436,7 +436,11 @@
             byId('btnSalvarTarefa').addEventListener('click', salvarTarefa);
             const cnpjInput = byId('cnpj');
             cnpjInput.addEventListener('blur', tryFetchCNPJ);
-            cnpjInput.addEventListener('input', ()=>{ const d=(cnpjInput.value||'').replace(/\D/g,''); if(d.length===14) tryFetchCNPJ() });
+            cnpjInput.addEventListener('input', ()=>{
+                const digits = (cnpjInput.value||'').replace(/\D/g,'').slice(0,14);
+                if (cnpjInput.value !== digits) cnpjInput.value = digits;
+                if (digits.length===14) tryFetchCNPJ();
+            });
             byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus('') });
             byId('modalTarefa').addEventListener('hidden.bs.modal', ()=>{ byId('formTarefa').reset(); byId('tarefaId').value=''; byId('tarefaEmpresaId').value=''; tarefaEditando=null });
 
