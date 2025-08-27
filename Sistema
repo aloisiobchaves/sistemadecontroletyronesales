@@ -754,12 +754,11 @@
                 const key = `${it.area}|${it.nome}`;
                 const checked = !!estado[key];
                 const id = `ck_${idx}`;
-                const extraSuffix = (it.area==='Federal' && it.nome==='EFD-Contribuições') ? ' - Contabilidade' : '';
                 cont.innerHTML += `
                     <label class="check-item" for="${id}">
                         <input class="form-check-input me-1" type="checkbox" id="${id}" ${checked?'checked':''} data-key="${key}">
                         <div>
-                            <div><strong>${it.nome}</strong> <small>(${it.area})</small>${extraSuffix}</div>
+                            <div><strong>${it.nome}</strong> <small>(${it.area})</small></div>
                         </div>
                     </label>`;
             });
