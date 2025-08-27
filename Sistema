@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Verificação de Tarefas Contábeis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .card-empresa{transition:.3s}
+        .card-empresa:hover{transform:translateY(-5px);box-shadow:0 10px 20px rgba(0,0,0,.1)}
+        .tarefa-concluida{text-decoration:line-through;color:#6c757d}
+        .obrigacao-item{border-left:4px solid #0d6efd;padding-left:10px;margin-bottom:8px}
+        .vencimento-proximo{background:#fff3cd}
+        .navbar-brand{font-weight:700}
+        .regime-badge{font-size:.8em}
+        .tarefa-prioridade-alta{border-left:4px solid #dc3545}
+        .tarefa-prioridade-media{border-left:4px solid #ffc107}
+        .tarefa-prioridade-baixa{border-left:4px solid #0dcaf0}
+        .cnpj-help,.cnpj-status{font-size:.85rem}
+        .check-item{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid #e9ecef;border-radius:.5rem;margin-bottom:.5rem}
+        .check-item small{color:#6c757d}
+        .sticky-controls{position:sticky;top:0;background:#fff;z-index:2;padding-top:.5rem;padding-bottom:.5rem;border-bottom:1px solid #dee2e6;margin-bottom:.75rem}
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-calculator me-2"></i>Controle FiscoContábil</a>
+            <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modalEmpresa">
+                <i class="fas fa-plus me-1"></i> Nova Empresa
+            </button>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <!-- NAV TABS -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="abaEmpresas-tab" data-bs-toggle="tab" data-bs-target="#abaEmpresas" type="button" role="tab" aria-controls="abaEmpresas" aria-selected="true">
+                    <i class="fa-solid fa-building me-1"></i>Empresas Cadastradas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="abaChecklist-tab" data-bs-toggle="tab" data-bs-target="#abaChecklist" type="button" role="tab" aria-controls="abaChecklist" aria-selected="false">
+                    <i class="fa-solid fa-list-check me-1"></i>Checklist Mensal
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+            <!-- ABA EMPRESAS (original) -->
+            <div class="tab-pane fade show active" id="abaEmpresas" role="tabpanel" aria-labelledby="abaEmpresas-tab">
+                <div class="row mb-4">
+                    <div class="col-md-6"><h2>Empresas Cadastradas</h2></div>
+                    <div class="col-md-6 text-end">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Buscar empresa..." id="inputBusca">
+                            <button class="btn btn-outline-secondary" type="button" id="btnBuscar"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="listaEmpresas"></div>
+            </div>
+
+            <!-- ABA CHECKLIST MENSAL (NOVA) -->
+            <div class="tab-pane fade" id="abaChecklist" role="tabpanel" aria-labelledby="abaChecklist-tab">
+                <div class="sticky-controls">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label" for="selEmpresaChecklist">Empresa</label>
+                            <select class="form-select" id="selEmpresaChecklist"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="competencia">Competência</label>
+                            <input type="month" class="form-control" id="competencia">
+                        </div>
+                        <div class="col-md-4 text-md-end d-grid d-md-block">
+                            <button class="btn btn-outline-success me-1" id="btnMarcarTudo"><i class="fa-solid fa-check-double me-1"></i>Marcar tudo</button>
+                            <button class="btn btn-outline-secondary me-1" id="btnLimparTudo"><i class="fa-regular fa-circle me-1"></i>Limpar tudo</button>
+                            <button class="btn btn-outline-primary" id="btnExportarCSV"><i class="fa-solid fa-file-csv me-1"></i>Exportar CSV</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="mb-1" id="ckNomeEmpresa">—</h5>
+                        <p class="mb-2">
+                            <strong>CNPJ:</strong> <span id="ckCnpj">—</span> &nbsp;•&nbsp;
+                            <strong>Responsável:</strong> <span id="ckResponsavel">—</span>
+                        </p>
+                        <hr>
+                        <h6 class="mb-2">Tarefas do mês</h6>
+                        <div id="listaChecklist"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EMPRESA (mesmo do seu arquivo, com DFMS e EFD-Reinf já incluídos) -->
+    <div class="modal fade" id="modalEmpresa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEmpresaTitulo">Nova Empresa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEmpresa">
+                        <input type="hidden" id="empresaId">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="nomeEmpresa" class="form-label">Nome da Empresa</label>
+                                <input type="text" class="form-control" id="nomeEmpresa" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="cnpj" class="form-label">CNPJ</label>
+                                <input type="text" class="form-control" id="cnpj" required placeholder="Somente números">
+                                <div class="d-flex justify-content-between mt-1">
+                                    <span class="text-muted cnpj-help">Ao sair do campo, busco dados da Receita.</span>
+                                    <span id="cnpjStatus" class="cnpj-status"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="regimeTributario" class="form-label">Regime Tributário</label>
+                                <select class="form-select" id="regimeTributario" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Simples Nacional">Simples Nacional</option>
+                                    <option value="Presumido">Presumido</option>
+                                    <option value="Real">Real</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="regimeCaixaCompetencia" class="form-label">Regime: Caixa/Competência</label>
+                                <select class="form-select" id="regimeCaixaCompetencia" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Caixa">Caixa</option>
+                                    <option value="Competência">Competência</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="certificadoDigital" class="form-label">Vencimento do Certificado Digital</label>
+                                <input type="date" class="form-control" id="certificadoDigital">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="responsavel" class="form-label">Responsável Contábil/Fiscal</label>
+                                <input type="text" class="form-control" id="responsavel">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Obrigações Mensais</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6>Municipais</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="ISSQN" id="obrigIssqn">
+                                        <label class="form-check-label" for="obrigIssqn">ISSQN</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="NFS-e" id="obrigNfse">
+                                        <label class="form-check-label" for="obrigNfse">NFS-e</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="DFMS" id="obrigDfms">
+                                        <label class="form-check-label" for="obrigDfms">DFMS</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinf">
+                                        <label class="form-check-label" for="obrigReinf">EFD-Reinf</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <h6>Estaduais</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="ICMS" id="obrigIcmsEst">
+                                        <label class="form-check-label" for="obrigIcmsEst">ICMS</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="GIA/EFD-ICMS/IPI" id="obrigGiaEst">
+                                        <label class="form-check-label" for="obrigGiaEst">GIA/EFD-ICMS/IPI</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="NF-e" id="obrigNfeEst">
+                                        <label class="form-check-label" for="obrigNfeEst">NF-e</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="DCTF" id="obrigDctfEst">
+                                        <label class="form-check-label" for="obrigDctfEst">DCTF</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="EFD-Contribuições" id="obrigEfdContribEst">
+                                        <label class="form-check-label" for="obrigEfdContribEst">EFD-Contribuições</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="PIS/COFINS" id="obrigPisCofinsEst">
+                                        <label class="form-check-label" for="obrigPisCofinsEst">PIS/COFINS</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllEst">
+                                        <label class="form-check-label" for="obrigIrpjCsllEst">IRPJ/CSLL</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfEst">
+                                        <label class="form-check-label" for="obrigReinfEst">EFD-Reinf</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <h6>Federais</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="SPED Fiscal" id="obrigSpedFed">
+                                        <label class="form-check-label" for="obrigSpedFed">SPED Fiscal</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllFed">
+                                        <label class="form-check-label" for="obrigIrpjCsllFed">IRPJ/CSLL</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="PIS/COFINS" id="obrigPisCofinsFed">
+                                        <label class="form-check-label" for="obrigPisCofinsFed">PIS/COFINS</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="DCTF" id="obrigDctfFed">
+                                        <label class="form-check-label" for="obrigDctfFed">DCTF</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="EFD-Contribuições" id="obrigEfdContribFed">
+                                        <label class="form-check-label" for="obrigEfdContribFed">EFD-Contribuições</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="PGDAS-D" id="obrigPgdasFed">
+                                        <label class="form-check-label" for="obrigPgdasFed">PGDAS-D</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfFed">
+                                        <label class="form-check-label" for="obrigReinfFed">EFD-Reinf</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Declarações Anuais</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input declaração-anual" type="checkbox" value="DEFIS" id="defis">
+                                        <label class="form-check-label" for="defis">DEFIS (Simples Nacional)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input declaração-anual" type="checkbox" value="ECF" id="ecf">
+                                        <label class="form-check-label" for="ecf">ECF (Presumido/Real)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input declaração-anual" type="checkbox" value="ECD" id="ecd">
+                                        <label class="form-check-label" for="ecd">ECD (Presumido/Real)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input declaração-anual" type="checkbox" value="DIMED" id="dimed">
+                                        <label class="form-check-label" for="dimed">DIMED (Todos os regimes)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input declaração-anual" type="checkbox" value="DMOB" id="dmob">
+                                        <label class="form-check-label" for="dmob">DMOB (Todos os regimes)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarEmpresa">Salvar Empresa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL VISUALIZAR (sem alterações de layout relevantes) -->
+    <div class="modal fade" id="modalVisualizarEmpresa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalVisualizarTitulo">Detalhes da Empresa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 id="detalheNomeEmpresa"></h4>
+                            <p><strong>CNPJ:</strong> <span id="detalheCnpj"></span></p>
+                            <p><strong>Regime Tributário:</strong> <span id="detalheRegimeTributario" class="badge bg-primary regime-badge"></span></p>
+                            <p><strong>Regime:</strong> <span id="detalheRegimeCaixaCompetencia"></span></p>
+                            <p><strong>Certificado Digital:</strong> <span id="detalheCertificadoDigital"></span></p>
+                            <p><strong>Responsável:</strong> <span id="detalheResponsavel"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Tarefas</h5>
+                                <button class="btn btn-sm btn-outline-primary" id="btnNovaTarefa"><i class="fas fa-plus"></i> Nova Tarefa</button>
+                            </div>
+                            <div id="listaTarefas"></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <h5>Obrigações Mensais</h5>
+                    <div class="row">
+                        <div class="col-md-4"><h6>Municipais</h6><div id="detalheObrigacoesMunicipais"></div></div>
+                        <div class="col-md-4"><h6>Estaduais</h6><div id="detalheObrigacoesEstaduais"></div></div>
+                        <div class="col-md-4"><h6>Federais</h6><div id="detalheObrigacoesFederais"></div></div>
+                    </div>
+                    <hr>
+                    <h5>Declarações Anuais</h5>
+                    <div id="detalheDeclaracoesAnuais"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="btnEditarEmpresa">Editar Empresa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAREFA (igual ao seu) -->
+    <div class="modal fade" id="modalTarefa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTarefaTitulo">Nova Tarefa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTarefa">
+                        <input type="hidden" id="tarefaId">
+                        <input type="hidden" id="tarefaEmpresaId">
+                        <div class="mb-3">
+                            <label for="tituloTarefa" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="tituloTarefa" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricaoTarefa" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="descricaoTarefa" rows="3"></textarea>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="dataVencimentoTarefa" class="form-label">Data de Vencimento</label>
+                                <input type="date" class="form-control" id="dataVencimentoTarefa">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="prioridadeTarefa" class="form-label">Prioridade</label>
+                                <select class="form-select" id="prioridadeTarefa">
+                                    <option value="baixa">Baixa</option>
+                                    <option value="media">Média</option>
+                                    <option value="alta">Alta</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarTarefa">Salvar Tarefa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ======= Estado global
+        let empresas = JSON.parse(localStorage.getItem('empresas')) || [];
+        let empresaEditando = null;
+        let tarefaEditando = null;
+
+        // ======= Helpers
+        const byId = (id)=>document.getElementById(id);
+        function setCNPJStatus(texto,tipo='muted'){
+            const el = byId('cnpjStatus'); el.className='cnpj-status';
+            if(!texto){el.textContent='';return}
+            el.classList.add(tipo==='ok'?'text-success':(tipo==='erro'?'text-danger':'text-muted'));
+            el.textContent = texto;
+        }
+        function gerarId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2) }
+        function formatarData(s){ if(!s) return 'Não informado'; const d=new Date(s); return isNaN(d)?'Não informado':d.toLocaleDateString('pt-BR') }
+
+        // ======= CNPJ (BrasilAPI + fallback)
+        async function tryFetchCNPJ(){
+            const v=(byId('cnpj').value||'').replace(/\D/g,''); if(v.length!==14){setCNPJStatus('CNPJ inválido','erro');return}
+            setCNPJStatus('Consultando...');
+            try{
+                const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${v}`,{cache:'no-store'});
+                if(r.ok){ const data=await r.json(); const nome=byId('nomeEmpresa');
+                    if(!nome.value && data?.razao_social) nome.value=data.razao_social;
+                    setCNPJStatus('Dados obtidos da Receita (BrasilAPI).','ok'); return;
+                }
+            }catch{}
+            try{
+                const r2=await fetch(`https://receitaws.com.br/v1/cnpj/${v}`,{cache:'no-store'});
+                if(r2.ok){ const d2=await r2.json(); if(d2 && d2.status!=='ERROR'){
+                    const nome=byId('nomeEmpresa'); if(!nome.value && d2?.nome) nome.value=d2.nome;
+                    setCNPJStatus('Dados obtidos (Receitaws).','ok'); return;
+                }}
+                setCNPJStatus('Não foi possível obter dados do CNPJ.','erro');
+            }catch{ setCNPJStatus('Não foi possível obter dados do CNPJ (CORS).','erro') }
+        }
+
+        // ======= Inicialização
+        document.addEventListener('DOMContentLoaded', ()=>{
+            carregarEmpresas();
+            // Empresa modal events
+            byId('btnSalvarEmpresa').addEventListener('click', salvarEmpresa);
+            byId('btnBuscar').addEventListener('click', buscarEmpresas);
+            byId('inputBusca').addEventListener('keyup', buscarEmpresas);
+            byId('btnEditarEmpresa').addEventListener('click', prepararEdicaoEmpresa);
+            byId('btnNovaTarefa').addEventListener('click', novaTarefa);
+            byId('btnSalvarTarefa').addEventListener('click', salvarTarefa);
+            const cnpjInput = byId('cnpj');
+            cnpjInput.addEventListener('blur', tryFetchCNPJ);
+            cnpjInput.addEventListener('input', ()=>{ const d=(cnpjInput.value||'').replace(/\D/g,''); if(d.length===14) tryFetchCNPJ() });
+            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus('') });
+            byId('modalTarefa').addEventListener('hidden.bs.modal', ()=>{ byId('formTarefa').reset(); byId('tarefaId').value=''; byId('tarefaEmpresaId').value=''; tarefaEditando=null });
+
+            // Checklist events
+            byId('selEmpresaChecklist').addEventListener('change', refreshChecklist);
+            byId('competencia').addEventListener('change', refreshChecklist);
+            byId('btnMarcarTudo').addEventListener('click', ()=>toggleAllChecklist(true));
+            byId('btnLimparTudo').addEventListener('click', ()=>toggleAllChecklist(false));
+            byId('btnExportarCSV').addEventListener('click', exportarChecklistCSV);
+
+            // Competência padrão = mês atual
+            const now = new Date();
+            byId('competencia').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+            // Preenche selecionador de empresa na aba Checklist
+            preencherSelectChecklist();
+        });
+
+        // ======= Empresas (listagem/CRUD) – igual ao seu, mantendo DFMS/EFD-Reinf
+        function carregarEmpresas(){
+            const wrap = byId('listaEmpresas'); wrap.innerHTML='';
+            if(empresas.length===0){
+                wrap.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nenhuma empresa cadastrada</h4>
+                        <p>Clique no botão "Nova Empresa" para começar</p>
+                    </div>`;
+                preencherSelectChecklist();
+                return;
+            }
+            empresas.forEach(empresa=>{
+                const v = empresa.certificadoDigital ? new Date(empresa.certificadoDigital) : null;
+                const diff = v ? Math.ceil((v - new Date())/(1000*60*60*24)) : Infinity;
+                const cardClass = v && diff<=30 ? 'vencimento-proximo':'';
+                wrap.innerHTML += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card card-empresa ${cardClass}">
+                            <div class="card-body">
+                                <h5 class="card-title">${empresa.nome}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">${empresa.cnpj}</h6>
+                                <p class="card-text">
+                                    <span class="badge bg-primary regime-badge">${empresa.regimeTributario}</span>
+                                    <span class="badge bg-secondary regime-badge">${empresa.regimeCaixaCompetencia}</span>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted"><i class="fas fa-certificate me-1"></i> Cert. Digital: ${formatarData(empresa.certificadoDigital)}
+                                    ${v && diff<=30 ? `<span class="badge bg-warning">Vence em ${diff} dias</span>`:''}</small>
+                                </p>
+                                <p class="card-text"><small class="text-muted"><i class="fas fa-user me-1"></i> Responsável: ${empresa.responsavel||'Não informado'}</small></p>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="visualizarEmpresa('${empresa.id}')"><i class="fas fa-eye me-1"></i> Ver detalhes</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="excluirEmpresa('${empresa.id}')"><i class="fas fa-trash me-1"></i> Excluir</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            preencherSelectChecklist();
+        }
+
+        function salvarEmpresa(){
+            const id = byId('empresaId').value || gerarId();
+            const empresa = {
+                id,
+                nome: byId('nomeEmpresa').value.trim(),
+                cnpj: (byId('cnpj').value||'').replace(/\D/g,''),
+                regimeTributario: byId('regimeTributario').value,
+                regimeCaixaCompetencia: byId('regimeCaixaCompetencia').value,
+                certificadoDigital: byId('certificadoDigital').value,
+                responsavel: byId('responsavel').value,
+                obrigacoesMensais: {
+                    municipais: coletarObrigacoesSelecionadas('mun'),
+                    estaduais: coletarObrigacoesSelecionadas('est'),
+                    federais: coletarObrigacoesSelecionadas('fed')
+                },
+                declaracoesAnuais: Array.from(document.querySelectorAll('.declaração-anual:checked')).map(cb=>cb.value),
+                tarefas: empresaEditando ? (empresaEditando.tarefas||[]) : []
+            };
+            if(empresaEditando){
+                const i = empresas.findIndex(e=>e.id===empresaEditando.id);
+                if(i!==-1) empresas[i]=empresa;
+            } else {
+                empresas.push(empresa);
+            }
+            localStorage.setItem('empresas', JSON.stringify(empresas));
+            carregarEmpresas();
+            bootstrap.Modal.getInstance(byId('modalEmpresa')).hide();
+            empresaEditando = null;
+        }
+
+        function coletarObrigacoesSelecionadas(tipo){
+            const prefix='obrig'; const sufix = tipo==='mun'?'':(tipo==='est'?'Est':'Fed');
+            const arr=[];
+            document.querySelectorAll(`[id^="${prefix}"]`).forEach(input=>{
+                if(input.checked){
+                    if(sufix==='' && !/(Est|Fed)$/.test(input.id)) arr.push(input.value);
+                    if(sufix && input.id.endsWith(sufix)) arr.push(input.value);
+                }
+            });
+            return arr;
+        }
+
+        function visualizarEmpresa(id){
+            empresaEditando = empresas.find(e=>e.id===id); if(!empresaEditando) return;
+            byId('detalheNomeEmpresa').textContent = empresaEditando.nome;
+            byId('detalheCnpj').textContent = empresaEditando.cnpj;
+            byId('detalheRegimeTributario').textContent = empresaEditando.regimeTributario;
+            byId('detalheRegimeCaixaCompetencia').textContent = empresaEditando.regimeCaixaCompetencia;
+            byId('detalheCertificadoDigital').textContent = formatarData(empresaEditando.certificadoDigital);
+            byId('detalheResponsavel').textContent = empresaEditando.responsavel||'Não informado';
+            preencherObrigacoes('detalheObrigacoesMunicipais', empresaEditando.obrigacoesMensais.municipais);
+            preencherObrigacoes('detalheObrigacoesEstaduais', empresaEditando.obrigacoesMensais.estaduais);
+            preencherObrigacoes('detalheObrigacoesFederais', empresaEditando.obrigacoesMensais.federais);
+            const cont = byId('detalheDeclaracoesAnuais'); cont.innerHTML='';
+            if(empresaEditando.declaracoesAnuais?.length){
+                empresaEditando.declaracoesAnuais.forEach(d=>{
+                    const span=document.createElement('span'); span.className='badge bg-info me-2'; span.textContent=d; cont.appendChild(span);
+                });
+            }else cont.innerHTML='<p class="text-muted">Nenhuma declaração anual configurada</p>';
+            carregarTarefas();
+            new bootstrap.Modal(byId('modalVisualizarEmpresa')).show();
+        }
+
+        function preencherObrigacoes(elId, lista){
+            const el=byId(elId); el.innerHTML='';
+            if(lista?.length){ lista.forEach(o=>{ const div=document.createElement('div'); div.className='obrigacao-item'; div.textContent=o; el.appendChild(div); })}
+            else el.innerHTML='<p class="text-muted">Nenhuma obrigação</p>';
+        }
+
+        function prepararEdicaoEmpresa(){
+            if(!empresaEditando) return;
+            byId('empresaId').value = empresaEditando.id;
+            byId('nomeEmpresa').value = empresaEditando.nome;
+            byId('cnpj').value = empresaEditando.cnpj;
+            byId('regimeTributario').value = empresaEditando.regimeTributario;
+            byId('regimeCaixaCompetencia').value = empresaEditando.regimeCaixaCompetencia;
+            byId('certificadoDigital').value = empresaEditando.certificadoDigital||'';
+            byId('responsavel').value = empresaEditando.responsavel||'';
+            marcarObrigacoes(empresaEditando.obrigacoesMensais.municipais,'mun');
+            marcarObrigacoes(empresaEditando.obrigacoesMensais.estaduais,'est');
+            marcarObrigacoes(empresaEditando.obrigacoesMensais.federais,'fed');
+            document.querySelectorAll('.declaração-anual').forEach(i=>{ i.checked=(empresaEditando.declaracoesAnuais||[]).includes(i.value) });
+            bootstrap.Modal.getInstance(byId('modalVisualizarEmpresa')).hide();
+            new bootstrap.Modal(byId('modalEmpresa')).show();
+        }
+
+        function marcarObrigacoes(obrigacoes,tipo){
+            const prefix='obrig'; const sufix = tipo==='mun'?'':(tipo==='est'?'Est':'Fed');
+            document.querySelectorAll(`[id^="${prefix}"]`).forEach(input=>{
+                if(sufix===''){ if(!/(Est|Fed)$/.test(input.id)) input.checked = obrigacoes.includes(input.value) }
+                else { if(input.id.endsWith(sufix)) input.checked = obrigacoes.includes(input.value) }
+            });
+        }
+
+        function excluirEmpresa(id){
+            if(!confirm('Tem certeza que deseja excluir esta empresa?')) return;
+            empresas = empresas.filter(e=>e.id!==id);
+            localStorage.setItem('empresas', JSON.stringify(empresas));
+            carregarEmpresas();
+        }
+
+        function buscarEmpresas(){
+            const termo = byId('inputBusca').value.toLowerCase().trim();
+            if(!termo){ carregarEmpresas(); return; }
+            const filtradas = empresas.filter(e=>
+                (e.nome||'').toLowerCase().includes(termo) ||
+                (e.cnpj||'').includes(termo) ||
+                (e.regimeTributario||'').toLowerCase().includes(termo)
+            );
+            const wrap = byId('listaEmpresas'); wrap.innerHTML='';
+            if(!filtradas.length){
+                wrap.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nenhuma empresa encontrada</h4>
+                        <p>Tente alterar os termos da busca</p>
+                    </div>`;
+                return;
+            }
+            filtradas.forEach(empresa=>{
+                const v = empresa.certificadoDigital ? new Date(empresa.certificadoDigital) : null;
+                const diff = v ? Math.ceil((v - new Date())/(1000*60*60*24)) : Infinity;
+                const cardClass = v && diff<=30 ? 'vencimento-proximo':'';
+                wrap.innerHTML += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card card-empresa ${cardClass}">
+                            <div class="card-body">
+                                <h5 class="card-title">${empresa.nome}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">${empresa.cnpj}</h6>
+                                <p class="card-text">
+                                    <span class="badge bg-primary regime-badge">${empresa.regimeTributario}</span>
+                                    <span class="badge bg-secondary regime-badge">${empresa.regimeCaixaCompetencia}</span>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted"><i class="fas fa-certificate me-1"></i> Cert. Digital: ${formatarData(empresa.certificadoDigital)}
+                                    ${v && diff<=30 ? `<span class="badge bg-warning">Vence em ${diff} dias</span>`:''}</small>
+                                </p>
+                                <p class="card-text"><small class="text-muted"><i class="fas fa-user me-1"></i> Responsável: ${empresa.responsavel||'Não informado'}</small></p>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="visualizarEmpresa('${empresa.id}')"><i class="fas fa-eye me-1"></i> Ver detalhes</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="excluirEmpresa('${empresa.id}')"><i class="fas fa-trash me-1"></i> Excluir</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // ======= Tarefas (modal) – inalterado
+        function novaTarefa(){ byId('modalTarefaTitulo').textContent='Nova Tarefa'; byId('tarefaEmpresaId').value=empresaEditando.id; new bootstrap.Modal(byId('modalTarefa')).show() }
+        function editarTarefa(id){
+            tarefaEditando = empresaEditando.tarefas.find(t=>t.id===id); if(!tarefaEditando) return;
+            byId('modalTarefaTitulo').textContent='Editar Tarefa';
+            byId('tarefaId').value=tarefaEditando.id; byId('tarefaEmpresaId').value=empresaEditando.id;
+            byId('tituloTarefa').value=tarefaEditando.titulo; byId('descricaoTarefa').value=tarefaEditando.descricao||'';
+            byId('dataVencimentoTarefa').value=tarefaEditando.dataVencimento||''; byId('prioridadeTarefa').value=tarefaEditando.prioridade||'baixa';
+            new bootstrap.Modal(byId('modalTarefa')).show();
+        }
+        function salvarTarefa(){
+            const id = byId('tarefaId').value || gerarId();
+            const empresaId = byId('tarefaEmpresaId').value;
+            const tarefa = {
+                id,
+                titulo: byId('tituloTarefa').value.trim(),
+                descricao: byId('descricaoTarefa').value,
+                dataVencimento: byId('dataVencimentoTarefa').value,
+                prioridade: byId('prioridadeTarefa').value,
+                concluida: tarefaEditando ? !!tarefaEditando.concluida : false
+            };
+            const i = empresas.findIndex(e=>e.id===empresaId); if(i===-1) return;
+            if(tarefaEditando){ const ti=empresas[i].tarefas.findIndex(t=>t.id===id); if(ti!==-1) empresas[i].tarefas[ti]=tarefa }
+            else { if(!empresas[i].tarefas) empresas[i].tarefas=[]; empresas[i].tarefas.push(tarefa) }
+            localStorage.setItem('empresas', JSON.stringify(empresas));
+            if(empresaEditando && empresaEditando.id===empresaId){ empresaEditando=empresas[i]; carregarTarefas() }
+            bootstrap.Modal.getInstance(byId('modalTarefa')).hide();
+        }
+        function carregarTarefas(){
+            const cont=byId('listaTarefas'); cont.innerHTML='';
+            if(!empresaEditando?.tarefas?.length){ cont.innerHTML='<p class="text-muted">Nenhuma tarefa cadastrada</p>'; return; }
+            empresaEditando.tarefas.forEach(t=>{
+                const prClass=`tarefa-prioridade-${t.prioridade||'baixa'}`; const okClass=t.concluida?'tarefa-concluida':'';
+                cont.innerHTML+=`
+                    <div class="card mb-2 ${prClass}">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title mb-0 ${okClass}">${t.titulo}</h6>
+                                    <small class="text-muted">Vencimento: ${formatarData(t.dataVencimento)}</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm ${t.concluida?'btn-success':'btn-outline-success'}" onclick="marcarTarefa('${t.id}', ${!t.concluida})"><i class="fas ${t.concluida?'fa-check-circle':'fa-circle'}"></i></button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editarTarefa('${t.id}')"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="excluirTarefa('${t.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+        function marcarTarefa(id,concluida){
+            if(!empresaEditando) return;
+            const ti = empresaEditando.tarefas.findIndex(t=>t.id===id); if(ti===-1) return;
+            empresaEditando.tarefas[ti].concluida = concluida;
+            const ei = empresas.findIndex(e=>e.id===empresaEditando.id);
+            if(ei!==-1){ empresas[ei]=empresaEditando; localStorage.setItem('empresas', JSON.stringify(empresas)); carregarTarefas() }
+        }
+        function excluirTarefa(id){
+            if(!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+            if(!empresaEditando) return;
+            empresaEditando.tarefas = empresaEditando.tarefas.filter(t=>t.id!==id);
+            const ei = empresas.findIndex(e=>e.id===empresaEditando.id);
+            if(ei!==-1){ empresas[ei]=empresaEditando; localStorage.setItem('empresas', JSON.stringify(empresas)); carregarTarefas() }
+        }
+
+        // ======= CHECKLIST MENSAL (NOVA LÓGICA)
+        function preencherSelectChecklist(){
+            const sel = byId('selEmpresaChecklist'); const cur = sel.value;
+            sel.innerHTML = '<option value="">Selecione uma empresa...</option>';
+            empresas.forEach(e=>{ const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.nome; sel.appendChild(opt) });
+            // mantém seleção anterior se existir
+            if(empresas.find(e=>e.id===cur)) sel.value=cur;
+            refreshChecklist();
+        }
+
+        function getEmpresaSelecionada(){
+            const id = byId('selEmpresaChecklist').value;
+            return empresas.find(e=>e.id===id)||null;
+        }
+
+        function refreshChecklist(){
+            const emp = getEmpresaSelecionada();
+            const comp = byId('competencia').value; // YYYY-MM
+            const nome = emp?.nome || '—', cnpj = emp?.cnpj || '—', resp = emp?.responsavel || '—';
+            byId('ckNomeEmpresa').textContent = nome;
+            byId('ckCnpj').textContent = cnpj;
+            byId('ckResponsavel').textContent = resp;
+
+            const cont = byId('listaChecklist');
+            cont.innerHTML='';
+            if(!emp){ cont.innerHTML='<p class="text-muted">Selecione uma empresa para ver o checklist.</p>'; return; }
+            if(!comp){ cont.innerHTML='<p class="text-muted">Selecione a competência (mês/ano) para ver o checklist.</p>'; return; }
+
+            // Junta obrigações municipais/estaduais/federais
+            const itens = [
+                ...(emp.obrigacoesMensais?.municipais||[]).map(x=>({area:'Municipal', nome:x})),
+                ...(emp.obrigacoesMensais?.estaduais||[]).map(x=>({area:'Estadual', nome:x})),
+                ...(emp.obrigacoesMensais?.federais||[]).map(x=>({area:'Federal', nome:x})),
+            ];
+
+            if(!itens.length){ cont.innerHTML='<p class="text-muted">A empresa não possui obrigações mensais cadastradas.</p>'; return; }
+
+            const estado = carregarEstadoChecklist(emp.id, comp); // { "<area>|<nome>": true/false }
+            itens.forEach((it, idx)=>{
+                const key = `${it.area}|${it.nome}`;
+                const checked = !!estado[key];
+                const id = `ck_${idx}`;
+                cont.innerHTML += `
+                    <label class="check-item" for="${id}">
+                        <input class="form-check-input me-1" type="checkbox" id="${id}" ${checked?'checked':''} data-key="${key}">
+                        <div>
+                            <div><strong>${it.nome}</strong> <small>(${it.area})</small></div>
+                        </div>
+                    </label>`;
+            });
+
+            // Listener dos checkboxes
+            cont.querySelectorAll('input[type="checkbox"]').forEach(chk=>{
+                chk.addEventListener('change', ()=>{
+                    const k = chk.dataset.key;
+                    const cur = carregarEstadoChecklist(emp.id, comp);
+                    cur[k] = chk.checked;
+                    salvarEstadoChecklist(emp.id, comp, cur);
+                });
+            });
+        }
+
+        function storageKeyChecklist(empId, competencia){ return `checklist_${empId}_${competencia}` }
+        function carregarEstadoChecklist(empId, competencia){
+            try{ return JSON.parse(localStorage.getItem(storageKeyChecklist(empId, competencia))) || {} }catch{ return {} }
+        }
+        function salvarEstadoChecklist(empId, competencia, obj){
+            localStorage.setItem(storageKeyChecklist(empId, competencia), JSON.stringify(obj));
+        }
+        function toggleAllChecklist(flag){
+            const emp = getEmpresaSelecionada(); const comp = byId('competencia').value; if(!emp||!comp) return;
+            const obj = {}; document.querySelectorAll('#listaChecklist input[type="checkbox"]').forEach(chk=>{ chk.checked=flag; obj[chk.dataset.key]=flag });
+            salvarEstadoChecklist(emp.id, comp, obj);
+        }
+        function exportarChecklistCSV(){
+            const emp = getEmpresaSelecionada(); const comp = byId('competencia').value; if(!emp||!comp) return;
+            const estado = carregarEstadoChecklist(emp.id, comp);
+            const rows = [['Empresa','CNPJ','Responsável','Competência','Área','Tarefa','Concluída']];
+            Object.keys(estado).forEach(k=>{
+                const [area, nome] = k.split('|');
+                rows.push([emp.nome, emp.cnpj, emp.responsavel||'', comp, area, nome, estado[k]?'Sim':'Não']);
+            });
+            // inclui as não-marcadas também, caso não existam no estado
+            const todas = [
+                ...(emp.obrigacoesMensais?.municipais||[]).map(x=>['Municipal',x]),
+                ...(emp.obrigacoesMensais?.estaduais||[]).map(x=>['Estadual',x]),
+                ...(emp.obrigacoesMensais?.federais||[]).map(x=>['Federal',x]),
+            ];
+            todas.forEach(([area,nome])=>{
+                const key=`${area}|${nome}`; if(!(key in estado)){
+                    rows.push([emp.nome, emp.cnpj, emp.responsavel||'', comp, area, nome, 'Não']);
+                }
+            });
+            const csv = rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href=url; a.download=`checklist_${emp.nome}_${comp}.csv`; a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
