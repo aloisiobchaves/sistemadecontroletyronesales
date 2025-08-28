@@ -238,16 +238,19 @@
                                         <label class="form-check-label" for="obrigEfdContribFed">EFD-Contribuições</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeFed">
-                                        <label class="form-check-label" for="obrigContabilidadeFed">Contabilidade</label>
-                                    </div>
-                                    <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="PGDAS-D" id="obrigPgdasFed">
                                         <label class="form-check-label" for="obrigPgdasFed">PGDAS-D</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfFed">
                                         <label class="form-check-label" for="obrigReinfFed">EFD-Reinf</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Outras obrigações</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeOut">
+                                        <label class="form-check-label" for="obrigContabilidadeOut">Contabilidade</label>
                                     </div>
                                 </div>
                             </div>
@@ -328,9 +331,10 @@
                     <hr>
                     <h5>Obrigações Mensais</h5>
                     <div class="row">
-                        <div class="col-md-4"><h6>Municipais</h6><div id="detalheObrigacoesMunicipais"></div></div>
-                        <div class="col-md-4"><h6>Estaduais</h6><div id="detalheObrigacoesEstaduais"></div></div>
-                        <div class="col-md-4"><h6>Federais</h6><div id="detalheObrigacoesFederais"></div></div>
+                        <div class="col-md-3"><h6>Municipais</h6><div id="detalheObrigacoesMunicipais"></div></div>
+                        <div class="col-md-3"><h6>Estaduais</h6><div id="detalheObrigacoesEstaduais"></div></div>
+                        <div class="col-md-3"><h6>Federais</h6><div id="detalheObrigacoesFederais"></div></div>
+                        <div class="col-md-3"><h6>Outras obrigações</h6><div id="detalheObrigacoesOutras"></div></div>
                     </div>
                     <hr>
                     <h5>Declarações Anuais</h5>
@@ -430,6 +434,7 @@
 
         // ======= Inicialização
         document.addEventListener('DOMContentLoaded', ()=>{
+            migrarContabilidadeParaOutras();
             carregarEmpresas();
             // Empresa modal events
             byId('btnSalvarEmpresa').addEventListener('click', salvarEmpresa);
@@ -517,7 +522,8 @@
                 obrigacoesMensais: {
                     municipais: coletarObrigacoesSelecionadas('mun'),
                     estaduais: coletarObrigacoesSelecionadas('est'),
-                    federais: coletarObrigacoesSelecionadas('fed')
+                    federais: coletarObrigacoesSelecionadas('fed'),
+                    outras: coletarObrigacoesSelecionadas('out')
                 },
                 declaracoesAnuais: Array.from(document.querySelectorAll('.declaração-anual:checked')).map(cb=>cb.value),
                 tarefas: empresaEditando ? (empresaEditando.tarefas||[]) : []
@@ -535,11 +541,12 @@
         }
 
         function coletarObrigacoesSelecionadas(tipo){
-            const prefix='obrig'; const sufix = tipo==='mun'?'':(tipo==='est'?'Est':'Fed');
+            const prefix='obrig';
+            const sufix = tipo==='mun' ? '' : (tipo==='est' ? 'Est' : (tipo==='fed' ? 'Fed' : (tipo==='out' ? 'Out' : '')));
             const arr=[];
             document.querySelectorAll(`[id^="${prefix}"]`).forEach(input=>{
                 if(input.checked){
-                    if(sufix==='' && !/(Est|Fed)$/.test(input.id)) arr.push(input.value);
+                    if(sufix==='' && !/(Est|Fed|Out)$/.test(input.id)) arr.push(input.value);
                     if(sufix && input.id.endsWith(sufix)) arr.push(input.value);
                 }
             });
@@ -557,6 +564,7 @@
             preencherObrigacoes('detalheObrigacoesMunicipais', empresaEditando.obrigacoesMensais.municipais);
             preencherObrigacoes('detalheObrigacoesEstaduais', empresaEditando.obrigacoesMensais.estaduais);
             preencherObrigacoes('detalheObrigacoesFederais', empresaEditando.obrigacoesMensais.federais);
+            preencherObrigacoes('detalheObrigacoesOutras', empresaEditando.obrigacoesMensais.outras);
             const cont = byId('detalheDeclaracoesAnuais'); cont.innerHTML='';
             if(empresaEditando.declaracoesAnuais?.length){
                 empresaEditando.declaracoesAnuais.forEach(d=>{
@@ -573,6 +581,49 @@
             else el.innerHTML='<p class="text-muted">Nenhuma obrigação</p>';
         }
 
+        // Migração: mover 'Contabilidade' de Federais para Outras obrigações e atualizar estados do checklist
+        function migrarContabilidadeParaOutras(){
+            let alterou=false;
+            empresas = (empresas||[]).map(emp=>{
+                const federais = emp?.obrigacoesMensais?.federais||[];
+                const outras = emp?.obrigacoesMensais?.outras||[];
+                if(federais.includes('Contabilidade')){
+                    const novasFederais = federais.filter(x=>x!=='Contabilidade');
+                    const novasOutras = outras.includes('Contabilidade')?outras:[...outras,'Contabilidade'];
+                    emp = {
+                        ...emp,
+                        obrigacoesMensais: {
+                            municipais: emp?.obrigacoesMensais?.municipais||[],
+                            estaduais: emp?.obrigacoesMensais?.estaduais||[],
+                            federais: novasFederais,
+                            outras: novasOutras
+                        }
+                    };
+                    alterou=true;
+                }
+                return emp;
+            });
+            if(alterou){
+                // Atualiza estados do checklist existentes nas chaves do localStorage
+                try{
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(k=>{
+                        if(k.startsWith('checklist_')){
+                            try{
+                                const obj = JSON.parse(localStorage.getItem(k)||'{}');
+                                if(obj['Federal|Contabilidade']){
+                                    obj['Outras|Contabilidade'] = obj['Federal|Contabilidade'];
+                                    delete obj['Federal|Contabilidade'];
+                                    localStorage.setItem(k, JSON.stringify(obj));
+                                }
+                            }catch{}
+                        }
+                    });
+                }catch{}
+                localStorage.setItem('empresas', JSON.stringify(empresas));
+            }
+        }
+
         function prepararEdicaoEmpresa(){
             if(!empresaEditando) return;
             byId('empresaId').value = empresaEditando.id;
@@ -585,15 +636,16 @@
             marcarObrigacoes(empresaEditando.obrigacoesMensais.municipais,'mun');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.estaduais,'est');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.federais,'fed');
+            marcarObrigacoes(empresaEditando.obrigacoesMensais.outras,'out');
             document.querySelectorAll('.declaração-anual').forEach(i=>{ i.checked=(empresaEditando.declaracoesAnuais||[]).includes(i.value) });
             bootstrap.Modal.getInstance(byId('modalVisualizarEmpresa')).hide();
             new bootstrap.Modal(byId('modalEmpresa')).show();
         }
 
         function marcarObrigacoes(obrigacoes,tipo){
-            const prefix='obrig'; const sufix = tipo==='mun'?'':(tipo==='est'?'Est':'Fed');
+            const prefix='obrig'; const sufix = tipo==='mun'?'':(tipo==='est'?'Est':(tipo==='fed'?'Fed':(tipo==='out'?'Out':'')));
             document.querySelectorAll(`[id^="${prefix}"]`).forEach(input=>{
-                if(sufix===''){ if(!/(Est|Fed)$/.test(input.id)) input.checked = obrigacoes.includes(input.value) }
+                if(sufix===''){ if(!/(Est|Fed|Out)$/.test(input.id)) input.checked = obrigacoes.includes(input.value) }
                 else { if(input.id.endsWith(sufix)) input.checked = obrigacoes.includes(input.value) }
             });
         }
@@ -744,11 +796,12 @@
             if(!emp){ cont.innerHTML='<p class="text-muted">Selecione uma empresa para ver o checklist.</p>'; return; }
             if(!comp){ cont.innerHTML='<p class="text-muted">Selecione a competência (mês/ano) para ver o checklist.</p>'; return; }
 
-            // Junta obrigações municipais/estaduais/federais
+            // Junta obrigações municipais/estaduais/federais/outras
             const itens = [
                 ...(emp.obrigacoesMensais?.municipais||[]).map(x=>({area:'Municipal', nome:x})),
                 ...(emp.obrigacoesMensais?.estaduais||[]).map(x=>({area:'Estadual', nome:x})),
                 ...(emp.obrigacoesMensais?.federais||[]).map(x=>({area:'Federal', nome:x})),
+                ...(emp.obrigacoesMensais?.outras||[]).map(x=>({area:'Outras obrigações', nome:x})),
             ];
 
             if(!itens.length){ cont.innerHTML='<p class="text-muted">A empresa não possui obrigações mensais cadastradas.</p>'; return; }
@@ -803,6 +856,7 @@
                 ...(emp.obrigacoesMensais?.municipais||[]).map(x=>['Municipal',x]),
                 ...(emp.obrigacoesMensais?.estaduais||[]).map(x=>['Estadual',x]),
                 ...(emp.obrigacoesMensais?.federais||[]).map(x=>['Federal',x]),
+                ...(emp.obrigacoesMensais?.outras||[]).map(x=>['Outras obrigações',x]),
             ];
             todas.forEach(([area,nome])=>{
                 const key=`${area}|${nome}`; if(!(key in estado)){
