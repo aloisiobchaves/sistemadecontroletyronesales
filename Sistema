@@ -450,6 +450,14 @@
         }
         function gerarId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2) }
         function formatarData(s){ if(!s) return 'Não informado'; const d=new Date(s); return isNaN(d)?'Não informado':d.toLocaleDateString('pt-BR') }
+        function normalizarTexto(s){
+            return (s||'')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g,'')
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g,' ');
+        }
 
         // Criação dinâmica de checkboxes em "Outras obrigações"
         function addOutraObrigacaoCheckbox(nome, marcar=true){
@@ -870,12 +878,13 @@
         }
 
         function buscarEmpresas(){
-            const termo = byId('inputBusca').value.toLowerCase().trim();
+            const termo = normalizarTexto(byId('inputBusca').value);
             if(!termo){ carregarEmpresas(); return; }
             const filtradas = empresas.filter(e=>
-                (e.nome||'').toLowerCase().includes(termo) ||
+                normalizarTexto(e.nome||'').includes(termo) ||
                 (e.cnpj||'').includes(termo) ||
-                (e.regimeTributario||'').toLowerCase().includes(termo)
+                normalizarTexto(e.regimeTributario||'').includes(termo) ||
+                normalizarTexto(e.responsavel||'').includes(termo)
             );
             const wrap = byId('listaEmpresas'); wrap.innerHTML='';
             if(!filtradas.length){
@@ -987,7 +996,10 @@
             const filtroResp = selResp ? selResp.value : '';
             const sel = byId('selEmpresaChecklist'); const cur = sel.value;
             sel.innerHTML = '<option value="">Selecione uma empresa...</option>';
-            const lista = filtroResp ? empresas.filter(e=> (e.responsavel||'')===filtroResp) : empresas;
+            const filtroNorm = normalizarTexto(filtroResp);
+            const lista = filtroNorm
+                ? empresas.filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm)
+                : empresas;
             lista.forEach(e=>{ const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.nome; sel.appendChild(opt) });
             // mantém seleção anterior se existir e ainda compatível com o filtro
             if(lista.find(e=>e.id===cur)) sel.value=cur; else sel.value='';
@@ -997,7 +1009,14 @@
         function preencherSelectResponsavelChecklist(){
             const sel = byId('selResponsavelChecklist'); if(!sel) return;
             const cur = sel.value;
-            const responsaveis = Array.from(new Set((empresas||[]).map(e=>(e.responsavel||'').trim()).filter(v=>v)) ).sort((a,b)=>a.localeCompare(b));
+            // Deduplica por forma normalizada, preservando o primeiro casing cadastrado
+            const mapa = new Map();
+            (empresas||[]).forEach(e=>{
+                const raw = (e.responsavel||'').trim(); if(!raw) return;
+                const key = normalizarTexto(raw); if(!key) return;
+                if(!mapa.has(key)) mapa.set(key, raw);
+            });
+            const responsaveis = Array.from(mapa.values()).sort((a,b)=>a.localeCompare(b));
             sel.innerHTML = '<option value="">Todos os responsáveis...</option>';
             responsaveis.forEach(r=>{ const opt=document.createElement('option'); opt.value=r; opt.textContent=r; sel.appendChild(opt) });
             if(cur && responsaveis.includes(cur)) sel.value=cur;
