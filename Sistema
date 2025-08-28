@@ -238,6 +238,10 @@
                                         <label class="form-check-label" for="obrigEfdContribFed">EFD-Contribuições</label>
                                     </div>
                                     <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeFed">
+                                        <label class="form-check-label" for="obrigContabilidadeFed">Contabilidade</label>
+                                    </div>
+                                    <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="PGDAS-D" id="obrigPgdasFed">
                                         <label class="form-check-label" for="obrigPgdasFed">PGDAS-D</label>
                                     </div>
