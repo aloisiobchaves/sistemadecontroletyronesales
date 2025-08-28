@@ -177,7 +177,6 @@
                                         <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinf">
                                         <label class="form-check-label" for="obrigReinf">EFD-Reinf</label>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="novaTarefaCategoria('Municipal')"><i class="fas fa-plus"></i> Adicionar tarefa</button>
                                 </div>
 
                                 <div class="col-md-4">
@@ -187,30 +186,13 @@
                                         <label class="form-check-label" for="obrigSpedFed">SPED Fiscal</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="ICMS" id="obrigIcmsEst">
-                                        <label class="form-check-label" for="obrigIcmsEst">ICMS</label>
-                                    </div>
-                                    <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="GIA/EFD-ICMS/IPI" id="obrigGiaEst">
                                         <label class="form-check-label" for="obrigGiaEst">GIA/EFD-ICMS/IPI</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="NF-e" id="obrigNfeEst">
-                                        <label class="form-check-label" for="obrigNfeEst">NF-e (Entrada e Saída)</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="PIS/COFINS" id="obrigPisCofinsEst">
-                                        <label class="form-check-label" for="obrigPisCofinsEst">PIS/COFINS</label>
-                                    </div>
-                                    <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllEst">
-                                        <label class="form-check-label" for="obrigIrpjCsllEst">IRPJ/CSLL</label>
+                                        <label class="form-check-label" for="obrigIrpjCsllEst">NF-e (Entradas e Saídas)</label>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfEst">
-                                        <label class="form-check-label" for="obrigReinfEst">EFD-Reinf</label>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="novaTarefaCategoria('Estadual')"><i class="fas fa-plus"></i> Adicionar tarefa</button>
                                 </div>
 
                                 <div class="col-md-4">
@@ -239,7 +221,6 @@
                                         <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfFed">
                                         <label class="form-check-label" for="obrigReinfFed">EFD-Reinf</label>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="novaTarefaCategoria('Federal')"><i class="fas fa-plus"></i> Adicionar tarefa</button>
                                 </div>
                                 <div class="col-md-4">
                                     <h6>Outras obrigações</h6>
@@ -247,7 +228,6 @@
                                         <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeOut">
                                         <label class="form-check-label" for="obrigContabilidadeOut">Contabilidade</label>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="novaTarefaCategoria('Outras obrigações')"><i class="fas fa-plus"></i> Adicionar tarefa</button>
                                 </div>
                             </div>
                         </div>
@@ -395,7 +375,6 @@
         let empresas = JSON.parse(localStorage.getItem('empresas')) || [];
         let empresaEditando = null;
         let tarefaEditando = null;
-        let tarefasTemp = [];
 
         // ======= Helpers
         const byId = (id)=>document.getElementById(id);
@@ -446,7 +425,6 @@
                 byId('modalEmpresaTitulo').textContent='Nova Empresa';
                 document.querySelectorAll('.declaração-anual').forEach(cb=>cb.checked=false);
                 setCNPJStatus('');
-                tarefasTemp = [];
             });
             byId('btnNovaTarefa').addEventListener('click', novaTarefa);
             byId('btnSalvarTarefa').addEventListener('click', salvarTarefa);
@@ -457,7 +435,7 @@
                 if (cnpjInput.value !== digits) cnpjInput.value = digits;
                 if (digits.length===14) tryFetchCNPJ();
             });
-            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus(''); tarefasTemp=[] });
+            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus('') });
             byId('modalTarefa').addEventListener('hidden.bs.modal', ()=>{ byId('formTarefa').reset(); byId('tarefaId').value=''; byId('tarefaEmpresaId').value=''; tarefaEditando=null });
 
             // Checklist events
@@ -533,7 +511,7 @@
                     outras: coletarObrigacoesSelecionadas('out')
                 },
                 declaracoesAnuais: Array.from(document.querySelectorAll('.declaração-anual:checked')).map(cb=>cb.value),
-                tarefas: empresaEditando ? (empresaEditando.tarefas||[]) : (tarefasTemp||[])
+                tarefas: empresaEditando ? (empresaEditando.tarefas||[]) : []
             };
             if(empresaEditando){
                 const i = empresas.findIndex(e=>e.id===empresaEditando.id);
@@ -545,7 +523,6 @@
             carregarEmpresas();
             bootstrap.Modal.getInstance(byId('modalEmpresa')).hide();
             empresaEditando = null;
-            tarefasTemp = [];
         }
 
         function coletarObrigacoesSelecionadas(tipo){
@@ -753,16 +730,6 @@
 
         // ======= Tarefas (modal) – inalterado
         function novaTarefa(){ byId('modalTarefaTitulo').textContent='Nova Tarefa'; byId('tarefaEmpresaId').value=empresaEditando.id; new bootstrap.Modal(byId('modalTarefa')).show() }
-        function novaTarefaCategoria(categoria){
-            byId('modalTarefaTitulo').textContent='Nova Tarefa';
-            // Se estamos criando nova empresa, empresaEditando pode ser null. Usar temp.
-            const empresaId = empresaEditando ? empresaEditando.id : '__TEMP__';
-            byId('tarefaEmpresaId').value = empresaId;
-            const prefixo = categoria ? `[${categoria}] ` : '';
-            const tituloEl = byId('tituloTarefa');
-            if(!tituloEl.value.trim()) tituloEl.value = prefixo;
-            new bootstrap.Modal(byId('modalTarefa')).show();
-        }
         function editarTarefa(id){
             tarefaEditando = empresaEditando.tarefas.find(t=>t.id===id); if(!tarefaEditando) return;
             byId('modalTarefaTitulo').textContent='Editar Tarefa';
@@ -782,16 +749,11 @@
                 prioridade: byId('prioridadeTarefa').value,
                 concluida: tarefaEditando ? !!tarefaEditando.concluida : false
             };
-            if(empresaId==='__TEMP__'){
-                const ti = tarefasTemp.findIndex(t=>t.id===id);
-                if(ti!==-1) tarefasTemp[ti]=tarefa; else tarefasTemp.push(tarefa);
-            } else {
-                const i = empresas.findIndex(e=>e.id===empresaId); if(i===-1) return;
-                if(tarefaEditando){ const ti=empresas[i].tarefas.findIndex(t=>t.id===id); if(ti!==-1) empresas[i].tarefas[ti]=tarefa }
-                else { if(!empresas[i].tarefas) empresas[i].tarefas=[]; empresas[i].tarefas.push(tarefa) }
-                localStorage.setItem('empresas', JSON.stringify(empresas));
-                if(empresaEditando && empresaEditando.id===empresaId){ empresaEditando=empresas[i]; carregarTarefas() }
-            }
+            const i = empresas.findIndex(e=>e.id===empresaId); if(i===-1) return;
+            if(tarefaEditando){ const ti=empresas[i].tarefas.findIndex(t=>t.id===id); if(ti!==-1) empresas[i].tarefas[ti]=tarefa }
+            else { if(!empresas[i].tarefas) empresas[i].tarefas=[]; empresas[i].tarefas.push(tarefa) }
+            localStorage.setItem('empresas', JSON.stringify(empresas));
+            if(empresaEditando && empresaEditando.id===empresaId){ empresaEditando=empresas[i]; carregarTarefas() }
             bootstrap.Modal.getInstance(byId('modalTarefa')).hide();
         }
         function carregarTarefas(){
