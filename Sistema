@@ -194,8 +194,6 @@
                                         <label class="form-check-label" for="obrigNfeEst">NF-e</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="DCTF" id="obrigDctfEst">
-                                        <label class="form-check-label" for="obrigDctfEst">DCTF</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="EFD-Contribuições" id="obrigEfdContribEst">
@@ -434,6 +432,7 @@
 
         // ======= Inicialização
         document.addEventListener('DOMContentLoaded', ()=>{
+            migrarRemoverDctfEstaduais();
             migrarContabilidadeParaOutras();
             carregarEmpresas();
             // Empresa modal events
@@ -622,6 +621,46 @@
                                 if(obj['Federal|Contabilidade']){
                                     obj['Outras|Contabilidade'] = obj['Federal|Contabilidade'];
                                     delete obj['Federal|Contabilidade'];
+                                    localStorage.setItem(k, JSON.stringify(obj));
+                                }
+                            }catch{}
+                        }
+                    });
+                }catch{}
+                localStorage.setItem('empresas', JSON.stringify(empresas));
+            }
+        }
+
+        // Migração: remover 'DCTF' das obrigações Estaduais e limpar estados do checklist
+        function migrarRemoverDctfEstaduais(){
+            let alterou=false;
+            empresas = (empresas||[]).map(emp=>{
+                const estaduais = emp?.obrigacoesMensais?.estaduais||[];
+                if(estaduais.includes('DCTF')){
+                    const novasEstaduais = estaduais.filter(x=>x!=='DCTF');
+                    emp = {
+                        ...emp,
+                        obrigacoesMensais: {
+                            municipais: emp?.obrigacoesMensais?.municipais||[],
+                            estaduais: novasEstaduais,
+                            federais: emp?.obrigacoesMensais?.federais||[],
+                            outras: emp?.obrigacoesMensais?.outras||[]
+                        }
+                    };
+                    alterou=true;
+                }
+                return emp;
+            });
+            if(alterou){
+                // Remover possíveis chaves salvas no checklist para 'Estadual|DCTF'
+                try{
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(k=>{
+                        if(k.startsWith('checklist_')){
+                            try{
+                                const obj = JSON.parse(localStorage.getItem(k)||'{}');
+                                if(Object.prototype.hasOwnProperty.call(obj, 'Estadual|DCTF')){
+                                    delete obj['Estadual|DCTF'];
                                     localStorage.setItem(k, JSON.stringify(obj));
                                 }
                             }catch{}
