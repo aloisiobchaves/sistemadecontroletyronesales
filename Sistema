@@ -228,6 +228,11 @@
                                         <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeOut">
                                         <label class="form-check-label" for="obrigContabilidadeOut">Contabilidade</label>
                                     </div>
+                                    <div class="input-group input-group-sm mt-2">
+                                        <input type="text" class="form-control" id="inputOutraObrigacao" placeholder="Adicionar outra obrigação">
+                                        <button class="btn btn-outline-primary" type="button" id="btnAddOutraObrigacao"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="outrasObrigacoesContainer" class="mt-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -387,6 +392,26 @@
         function gerarId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2) }
         function formatarData(s){ if(!s) return 'Não informado'; const d=new Date(s); return isNaN(d)?'Não informado':d.toLocaleDateString('pt-BR') }
 
+        // Criação dinâmica de checkboxes em "Outras obrigações"
+        function addOutraObrigacaoCheckbox(nome, marcar=true){
+            const cont = byId('outrasObrigacoesContainer'); if(!cont) return;
+            const jaExiste = Array.from(document.querySelectorAll('[id^="obrig"][id$="Out"]')).some(i=>i.value.toLowerCase()===nome.toLowerCase());
+            if(jaExiste) return;
+            const id = `obrig${gerarId()}Out`;
+            const wrap = document.createElement('div'); wrap.className='form-check';
+            const input = document.createElement('input'); input.className='form-check-input'; input.type='checkbox'; input.value=nome; input.id=id; input.checked=!!marcar;
+            const label = document.createElement('label'); label.className='form-check-label'; label.setAttribute('for', id); label.textContent = nome;
+            wrap.appendChild(input); wrap.appendChild(label); cont.appendChild(wrap);
+        }
+        function renderOutrasObrigacoesFromEmpresa(emp){
+            const cont = byId('outrasObrigacoesContainer'); if(!cont) return;
+            cont.innerHTML='';
+            const lista = emp?.obrigacoesMensais?.outras||[];
+            // evita duplicar itens já existentes como estáticos (ex.: Contabilidade)
+            const existentes = new Set(Array.from(document.querySelectorAll('[id^="obrig"][id$="Out"]')).map(i=>i.value));
+            lista.forEach(nome=>{ if(!existentes.has(nome)) addOutraObrigacaoCheckbox(nome, false) });
+        }
+
         // ======= CNPJ (BrasilAPI + fallback)
         async function tryFetchCNPJ(){
             const v=(byId('cnpj').value||'').replace(/\D/g,''); if(v.length!==14){setCNPJStatus('CNPJ inválido','erro');return}
@@ -425,6 +450,8 @@
                 byId('modalEmpresaTitulo').textContent='Nova Empresa';
                 document.querySelectorAll('.declaração-anual').forEach(cb=>cb.checked=false);
                 setCNPJStatus('');
+                const cont = byId('outrasObrigacoesContainer'); if(cont) cont.innerHTML='';
+                const inp = byId('inputOutraObrigacao'); if(inp) inp.value='';
             });
             byId('btnNovaTarefa').addEventListener('click', novaTarefa);
             byId('btnSalvarTarefa').addEventListener('click', salvarTarefa);
@@ -435,7 +462,19 @@
                 if (cnpjInput.value !== digits) cnpjInput.value = digits;
                 if (digits.length===14) tryFetchCNPJ();
             });
-            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus('') });
+            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus(''); const cont = byId('outrasObrigacoesContainer'); if(cont) cont.innerHTML=''; const inp = byId('inputOutraObrigacao'); if(inp) inp.value=''; });
+            // Outras obrigações: adicionar item
+            const btnAddOut = byId('btnAddOutraObrigacao');
+            const inputOut = byId('inputOutraObrigacao');
+            if(btnAddOut && inputOut){
+                const handlerAddOutra = ()=>{
+                    const v = (inputOut.value||'').trim(); if(!v) return;
+                    addOutraObrigacaoCheckbox(v, true);
+                    inputOut.value=''; inputOut.focus();
+                };
+                btnAddOut.addEventListener('click', handlerAddOutra);
+                inputOut.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); handlerAddOutra(); } });
+            }
             byId('modalTarefa').addEventListener('hidden.bs.modal', ()=>{ byId('formTarefa').reset(); byId('tarefaId').value=''; byId('tarefaEmpresaId').value=''; tarefaEditando=null });
 
             // Checklist events
@@ -658,6 +697,8 @@
             byId('regimeCaixaCompetencia').value = empresaEditando.regimeCaixaCompetencia;
             byId('certificadoDigital').value = empresaEditando.certificadoDigital||'';
             byId('responsavel').value = empresaEditando.responsavel||'';
+            // Renderiza primeiro os itens dinâmicos de Outras para permitir marcação
+            renderOutrasObrigacoesFromEmpresa(empresaEditando);
             marcarObrigacoes(empresaEditando.obrigacoesMensais.municipais,'mun');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.estaduais,'est');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.federais,'fed');
