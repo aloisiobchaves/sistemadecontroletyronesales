@@ -167,7 +167,7 @@
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="NFS-e" id="obrigNfse">
-                                        <label class="form-check-label" for="obrigNfse">NFS-e</label>
+                                        <label class="form-check-label" for="obrigNfse">NFS-e (Tomadas e Prestadas)</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="DFMS" id="obrigDfms">
@@ -195,7 +195,7 @@
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="NF-e" id="obrigNfeEst">
-                                        <label class="form-check-label" for="obrigNfeEst">NF-e</label>
+                                        <label class="form-check-label" for="obrigNfeEst">NF-e (Entrada e Saída)</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="PIS/COFINS" id="obrigPisCofinsEst">
