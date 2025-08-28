@@ -156,7 +156,15 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="responsavel" class="form-label">Responsável Contábil/Fiscal</label>
-                                <input type="text" class="form-control" id="responsavel">
+                                <select class="form-select" id="responsavel">
+                                    <option value="">Selecione...</option>
+                                    <option value="Tyrone Rego">Tyrone Rego</option>
+                                    <option value="Vitoria Nogueira">Vitoria Nogueira</option>
+                                    <option value="Iva Palheta">Iva Palheta</option>
+                                    <option value="Amanda Fernandes">Amanda Fernandes</option>
+                                    <option value="João Rocha">João Rocha</option>
+                                    <option value="Thaynara Ferreira">Thaynara Ferreira</option>
+                                </select>
                             </div>
                         </div>
 
