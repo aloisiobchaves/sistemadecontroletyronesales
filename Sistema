@@ -67,15 +67,19 @@
             <div class="tab-pane fade" id="abaChecklist" role="tabpanel" aria-labelledby="abaChecklist-tab">
                 <div class="sticky-controls">
                     <div class="row g-2 align-items-end">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <label class="form-label" for="selEmpresaChecklist">Empresa</label>
                             <select class="form-select" id="selEmpresaChecklist"></select>
                         </div>
                         <div class="col-md-3">
+                            <label class="form-label" for="selResponsavelChecklist">Responsável Contábil/Fiscal</label>
+                            <select class="form-select" id="selResponsavelChecklist"></select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label" for="competencia">Competência</label>
                             <input type="month" class="form-control" id="competencia">
                         </div>
-                        <div class="col-md-4 text-md-end d-grid d-md-block">
+                        <div class="col-md-3 text-md-end d-grid d-md-block">
                             <button class="btn btn-outline-success me-1" id="btnMarcarTudo"><i class="fa-solid fa-check-double me-1"></i>Marcar tudo</button>
                             <button class="btn btn-outline-secondary me-1" id="btnLimparTudo"><i class="fa-regular fa-circle me-1"></i>Limpar tudo</button>
                             <button class="btn btn-outline-primary" id="btnExportarCSV"><i class="fa-solid fa-file-csv me-1"></i>Exportar CSV</button>
@@ -585,6 +589,7 @@
 
             // Checklist events
             byId('selEmpresaChecklist').addEventListener('change', refreshChecklist);
+            const selResp = byId('selResponsavelChecklist'); if(selResp){ selResp.addEventListener('change', preencherSelectChecklist); }
             byId('competencia').addEventListener('change', refreshChecklist);
             byId('btnMarcarTudo').addEventListener('click', ()=>toggleAllChecklist(true));
             byId('btnLimparTudo').addEventListener('click', ()=>toggleAllChecklist(false));
@@ -623,7 +628,7 @@
             const now = new Date();
             byId('competencia').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
-            // Preenche selecionador de empresa na aba Checklist
+            // Preenche selecionadores da aba Checklist
             preencherSelectChecklist();
         });
 
@@ -977,12 +982,25 @@
 
         // ======= CHECKLIST MENSAL (NOVA LÓGICA)
         function preencherSelectChecklist(){
+            preencherSelectResponsavelChecklist();
+            const selResp = byId('selResponsavelChecklist');
+            const filtroResp = selResp ? selResp.value : '';
             const sel = byId('selEmpresaChecklist'); const cur = sel.value;
             sel.innerHTML = '<option value="">Selecione uma empresa...</option>';
-            empresas.forEach(e=>{ const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.nome; sel.appendChild(opt) });
-            // mantém seleção anterior se existir
-            if(empresas.find(e=>e.id===cur)) sel.value=cur;
+            const lista = filtroResp ? empresas.filter(e=> (e.responsavel||'')===filtroResp) : empresas;
+            lista.forEach(e=>{ const opt=document.createElement('option'); opt.value=e.id; opt.textContent=e.nome; sel.appendChild(opt) });
+            // mantém seleção anterior se existir e ainda compatível com o filtro
+            if(lista.find(e=>e.id===cur)) sel.value=cur; else sel.value='';
             refreshChecklist();
+        }
+
+        function preencherSelectResponsavelChecklist(){
+            const sel = byId('selResponsavelChecklist'); if(!sel) return;
+            const cur = sel.value;
+            const responsaveis = Array.from(new Set((empresas||[]).map(e=>(e.responsavel||'').trim()).filter(v=>v)) ).sort((a,b)=>a.localeCompare(b));
+            sel.innerHTML = '<option value="">Todos os responsáveis...</option>';
+            responsaveis.forEach(r=>{ const opt=document.createElement('option'); opt.value=r; opt.textContent=r; sel.appendChild(opt) });
+            if(cur && responsaveis.includes(cur)) sel.value=cur;
         }
 
         function getEmpresaSelecionada(){
