@@ -156,140 +156,161 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Obrigações Mensais</label>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <h6>Municipais</h6>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="ISSQN" id="obrigIssqn">
-                                        <label class="form-check-label" for="obrigIssqn">ISSQN</label>
+                        <div class="card mb-3">
+                            <div class="card-header">Obrigações Mensais</div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-header">Municipais</div>
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="ISSQN" id="obrigIssqn">
+                                                    <label class="form-check-label" for="obrigIssqn">ISSQN</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="NFS-e" id="obrigNfse">
+                                                    <label class="form-check-label" for="obrigNfse">NFS-e (Tomadas e Prestadas)</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="DFMS" id="obrigDfms">
+                                                    <label class="form-check-label" for="obrigDfms">DFMS</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinf">
+                                                    <label class="form-check-label" for="obrigReinf">EFD-Reinf</label>
+                                                </div>
+                                                <div id="municipaisObrigacoesContainer" class="mt-2"></div>
+                                                <div class="input-group input-group-sm mt-2">
+                                                    <input type="text" class="form-control" id="inputObrigacaoMunicipal" placeholder="Adicionar obrigação municipal">
+                                                    <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoMunicipal"><i class="fas fa-plus"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="NFS-e" id="obrigNfse">
-                                        <label class="form-check-label" for="obrigNfse">NFS-e (Tomadas e Prestadas)</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="DFMS" id="obrigDfms">
-                                        <label class="form-check-label" for="obrigDfms">DFMS</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinf">
-                                        <label class="form-check-label" for="obrigReinf">EFD-Reinf</label>
-                                    </div>
-                                    <div id="municipaisObrigacoesContainer" class="mt-2"></div>
-                                    <div class="input-group input-group-sm mt-2">
-                                        <input type="text" class="form-control" id="inputObrigacaoMunicipal" placeholder="Adicionar obrigação municipal">
-                                        <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoMunicipal"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                </div>
 
-                                <div class="col-md-4">
-                                    <h6>Estaduais</h6>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="SPED Fiscal" id="obrigSpedFed">
-                                        <label class="form-check-label" for="obrigSpedFed">SPED Fiscal</label>
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-header">Estaduais</div>
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="SPED Fiscal" id="obrigSpedFed">
+                                                    <label class="form-check-label" for="obrigSpedFed">SPED Fiscal</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="GIA/EFD-ICMS/IPI" id="obrigGiaEst">
+                                                    <label class="form-check-label" for="obrigGiaEst">GIA/EFD-ICMS/IPI</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllEst">
+                                                    <label class="form-check-label" for="obrigIrpjCsllEst">NF-e (Entradas e Saídas)</label>
+                                                </div>
+                                                <div id="estaduaisObrigacoesContainer" class="mt-2"></div>
+                                                <div class="input-group input-group-sm mt-2">
+                                                    <input type="text" class="form-control" id="inputObrigacaoEstadual" placeholder="Adicionar obrigação estadual">
+                                                    <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoEstadual"><i class="fas fa-plus"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="GIA/EFD-ICMS/IPI" id="obrigGiaEst">
-                                        <label class="form-check-label" for="obrigGiaEst">GIA/EFD-ICMS/IPI</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllEst">
-                                        <label class="form-check-label" for="obrigIrpjCsllEst">NF-e (Entradas e Saídas)</label>
-                                    </div>
-                                    <div id="estaduaisObrigacoesContainer" class="mt-2"></div>
-                                    <div class="input-group input-group-sm mt-2">
-                                        <input type="text" class="form-control" id="inputObrigacaoEstadual" placeholder="Adicionar obrigação estadual">
-                                        <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoEstadual"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                </div>
 
-                                <div class="col-md-4">
-                                    <h6>Federais</h6>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllFed">
-                                        <label class="form-check-label" for="obrigIrpjCsllFed">IRPJ/CSLL</label>
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-header">Federais</div>
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllFed">
+                                                    <label class="form-check-label" for="obrigIrpjCsllFed">IRPJ/CSLL</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="PIS/COFINS" id="obrigPisCofinsFed">
+                                                    <label class="form-check-label" for="obrigPisCofinsFed">PIS/COFINS</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="DCTF" id="obrigDctfFed">
+                                                    <label class="form-check-label" for="obrigDctfFed">DCTF</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="EFD-Contribuições" id="obrigEfdContribFed">
+                                                    <label class="form-check-label" for="obrigEfdContribFed">EFD-Contribuições</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="PGDAS-D" id="obrigPgdasFed">
+                                                    <label class="form-check-label" for="obrigPgdasFed">PGDAS-D</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfFed">
+                                                    <label class="form-check-label" for="obrigReinfFed">EFD-Reinf</label>
+                                                </div>
+                                                <div id="federaisObrigacoesContainer" class="mt-2"></div>
+                                                <div class="input-group input-group-sm mt-2">
+                                                    <input type="text" class="form-control" id="inputObrigacaoFederal" placeholder="Adicionar obrigação federal">
+                                                    <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoFederal"><i class="fas fa-plus"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="PIS/COFINS" id="obrigPisCofinsFed">
-                                        <label class="form-check-label" for="obrigPisCofinsFed">PIS/COFINS</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="DCTF" id="obrigDctfFed">
-                                        <label class="form-check-label" for="obrigDctfFed">DCTF</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="EFD-Contribuições" id="obrigEfdContribFed">
-                                        <label class="form-check-label" for="obrigEfdContribFed">EFD-Contribuições</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="PGDAS-D" id="obrigPgdasFed">
-                                        <label class="form-check-label" for="obrigPgdasFed">PGDAS-D</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfFed">
-                                        <label class="form-check-label" for="obrigReinfFed">EFD-Reinf</label>
-                                    </div>
-                                    <div id="federaisObrigacoesContainer" class="mt-2"></div>
-                                    <div class="input-group input-group-sm mt-2">
-                                        <input type="text" class="form-control" id="inputObrigacaoFederal" placeholder="Adicionar obrigação federal">
-                                        <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoFederal"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <h6>Outras obrigações</h6>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeOut">
-                                        <label class="form-check-label" for="obrigContabilidadeOut">Contabilidade</label>
-                                    </div>
-                                    <div id="outrasObrigacoesContainer" class="mt-2"></div>
-                                    <div class="input-group input-group-sm mt-2">
-                                        <input type="text" class="form-control" id="inputOutraObrigacao" placeholder="Adicionar outra obrigação">
-                                        <button class="btn btn-outline-primary" type="button" id="btnAddOutraObrigacao"><i class="fas fa-plus"></i></button>
+
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-header">Outras obrigações</div>
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeOut">
+                                                    <label class="form-check-label" for="obrigContabilidadeOut">Contabilidade</label>
+                                                </div>
+                                                <div id="outrasObrigacoesContainer" class="mt-2"></div>
+                                                <div class="input-group input-group-sm mt-2">
+                                                    <input type="text" class="form-control" id="inputOutraObrigacao" placeholder="Adicionar outra obrigação">
+                                                    <button class="btn btn-outline-primary" type="button" id="btnAddOutraObrigacao"><i class="fas fa-plus"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Declarações Anuais</label>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input declaração-anual" type="checkbox" value="DEFIS" id="defis">
-                                        <label class="form-check-label" for="defis">DEFIS (Simples Nacional)</label>
+                        <div class="card mb-3">
+                            <div class="card-header">Declarações Anuais</div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input declaração-anual" type="checkbox" value="DEFIS" id="defis">
+                                            <label class="form-check-label" for="defis">DEFIS (Simples Nacional)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input declaração-anual" type="checkbox" value="ECF" id="ecf">
+                                            <label class="form-check-label" for="ecf">ECF (Presumido/Real)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input declaração-anual" type="checkbox" value="ECD" id="ecd">
+                                            <label class="form-check-label" for="ecd">ECD (Presumido/Real)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input declaração-anual" type="checkbox" value="DIMED" id="dimed">
+                                            <label class="form-check-label" for="dimed">DIMED (Todos os regimes)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input declaração-anual" type="checkbox" value="DMOB" id="dmob">
+                                            <label class="form-check-label" for="dmob">DMOB (Todos os regimes)</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input declaração-anual" type="checkbox" value="ECF" id="ecf">
-                                        <label class="form-check-label" for="ecf">ECF (Presumido/Real)</label>
-                                    </div>
+                                <div id="declaracoesAnuaisContainer" class="mt-2"></div>
+                                <div class="input-group input-group-sm mt-2">
+                                    <input type="text" class="form-control" id="inputDeclaracaoAnual" placeholder="Adicionar declaração anual">
+                                    <button class="btn btn-outline-primary" type="button" id="btnAddDeclaracaoAnual"><i class="fas fa-plus"></i></button>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input declaração-anual" type="checkbox" value="ECD" id="ecd">
-                                        <label class="form-check-label" for="ecd">ECD (Presumido/Real)</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input declaração-anual" type="checkbox" value="DIMED" id="dimed">
-                                        <label class="form-check-label" for="dimed">DIMED (Todos os regimes)</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input declaração-anual" type="checkbox" value="DMOB" id="dmob">
-                                        <label class="form-check-label" for="dmob">DMOB (Todos os regimes)</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="declaracoesAnuaisContainer" class="mt-2"></div>
-                            <div class="input-group input-group-sm mt-2">
-                                <input type="text" class="form-control" id="inputDeclaracaoAnual" placeholder="Adicionar declaração anual">
-                                <button class="btn btn-outline-primary" type="button" id="btnAddDeclaracaoAnual"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
 
