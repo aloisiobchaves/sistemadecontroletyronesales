@@ -300,8 +300,12 @@
                                             <div class="card-header">Outras obrigações</div>
                                             <div class="card-body">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" value="Contabilidade" id="obrigContabilidadeOut">
-                                                    <label class="form-check-label" for="obrigContabilidadeOut">Contabilidade</label>
+                                                    <input class="form-check-input" type="checkbox" value="Com Contabilidade" id="obrigComContabilidadeOut">
+                                                    <label class="form-check-label" for="obrigComContabilidadeOut">Com Contabilidade</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="Sem Contabilidade" id="obrigSemContabilidadeOut">
+                                                    <label class="form-check-label" for="obrigSemContabilidadeOut">Sem Contabilidade</label>
                                                 </div>
                                                 <div id="outrasObrigacoesContainer" class="mt-2"></div>
                                                 <div class="input-group input-group-sm mt-2">
@@ -783,25 +787,36 @@
             else el.innerHTML='<p class="text-muted">Nenhuma obrigação</p>';
         }
 
-        // Migração: mover 'Contabilidade' de Federais para Outras obrigações e atualizar estados do checklist
+        // Migração: renomear 'Contabilidade' para 'Com Contabilidade', mover de Federal para Outras obrigações e atualizar checklist
         function migrarContabilidadeParaOutras(){
             let alterou=false;
             empresas = (empresas||[]).map(emp=>{
                 const federais = emp?.obrigacoesMensais?.federais||[];
                 const outras = emp?.obrigacoesMensais?.outras||[];
-                if(federais.includes('Contabilidade')){
-                    const novasFederais = federais.filter(x=>x!=='Contabilidade');
-                    const novasOutras = outras.includes('Contabilidade')?outras:[...outras,'Contabilidade'];
+
+                const tinhaContabilidadeFederal = federais.includes('Contabilidade');
+                const tinhaContabilidadeOutras = outras.includes('Contabilidade');
+
+                let novasFederais = federais.filter(x=>x!=='Contabilidade');
+                let novasOutras = outras.filter(x=>x!=='Contabilidade');
+
+                if(tinhaContabilidadeFederal || tinhaContabilidadeOutras){
+                    if(!novasOutras.includes('Com Contabilidade')){
+                        novasOutras = [...novasOutras, 'Com Contabilidade'];
+                    }
+                    alterou = true;
+                }
+
+                if(alterou){
                     emp = {
                         ...emp,
                         obrigacoesMensais: {
                             municipais: emp?.obrigacoesMensais?.municipais||[],
                             estaduais: emp?.obrigacoesMensais?.estaduais||[],
                             federais: novasFederais,
-                            outras: novasOutras
+                            outras: Array.from(new Set(novasOutras))
                         }
                     };
-                    alterou=true;
                 }
                 return emp;
             });
@@ -813,11 +828,23 @@
                         if(k.startsWith('checklist_')){
                             try{
                                 const obj = JSON.parse(localStorage.getItem(k)||'{}');
-                                if(obj['Federal|Contabilidade']){
-                                    obj['Outras|Contabilidade'] = obj['Federal|Contabilidade'];
-                                    delete obj['Federal|Contabilidade'];
-                                    localStorage.setItem(k, JSON.stringify(obj));
-                                }
+                                // Mapeia possíveis variantes antigas para a nova chave
+                                const antigos = [
+                                    'Federal|Contabilidade',
+                                    'Outras|Contabilidade',
+                                    'Outras obrigações|Contabilidade',
+                                    'Outras|Com Contabilidade'
+                                ];
+                                const novaChave = 'Outras obrigações|Com Contabilidade';
+                                let mudou = false;
+                                antigos.forEach(oldKey=>{
+                                    if(Object.prototype.hasOwnProperty.call(obj, oldKey)){
+                                        obj[novaChave] = obj[oldKey];
+                                        delete obj[oldKey];
+                                        mudou = true;
+                                    }
+                                });
+                                if(mudou){ localStorage.setItem(k, JSON.stringify(obj)); }
                             }catch{}
                         }
                     });
