@@ -156,6 +156,18 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="tipoAtividade" class="form-label">Atividade</label>
+                                <select class="form-select" id="tipoAtividade" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Comércio">Comércio</option>
+                                    <option value="Serviço">Serviço</option>
+                                    <option value="Ambas">Ambas</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="card mb-3">
                             <div class="card-header">Obrigações Mensais</div>
                             <div class="card-body">
@@ -350,6 +362,8 @@
                             <div id="listaTarefas"></div>
                         </div>
                     </div>
+                    <hr>
+                    <p><strong>Atividade:</strong> <span id="detalheTipoAtividade"></span></p>
                     <hr>
                     <h5>Obrigações Mensais</h5>
                     <div class="row">
@@ -664,6 +678,7 @@
                 regimeCaixaCompetencia: byId('regimeCaixaCompetencia').value,
                 certificadoDigital: byId('certificadoDigital').value,
                 responsavel: byId('responsavel').value,
+                tipoAtividade: byId('tipoAtividade').value,
                 obrigacoesMensais: {
                     municipais: coletarObrigacoesSelecionadas('mun'),
                     estaduais: coletarObrigacoesSelecionadas('est'),
@@ -706,6 +721,7 @@
             byId('detalheRegimeCaixaCompetencia').textContent = empresaEditando.regimeCaixaCompetencia;
             byId('detalheCertificadoDigital').textContent = formatarData(empresaEditando.certificadoDigital);
             byId('detalheResponsavel').textContent = empresaEditando.responsavel||'Não informado';
+            const detAtv = byId('detalheTipoAtividade'); if(detAtv) detAtv.textContent = empresaEditando.tipoAtividade||'Não informado';
             preencherObrigacoes('detalheObrigacoesMunicipais', empresaEditando.obrigacoesMensais.municipais);
             preencherObrigacoes('detalheObrigacoesEstaduais', empresaEditando.obrigacoesMensais.estaduais);
             preencherObrigacoes('detalheObrigacoesFederais', empresaEditando.obrigacoesMensais.federais);
@@ -818,6 +834,7 @@
             byId('regimeCaixaCompetencia').value = empresaEditando.regimeCaixaCompetencia;
             byId('certificadoDigital').value = empresaEditando.certificadoDigital||'';
             byId('responsavel').value = empresaEditando.responsavel||'';
+            byId('tipoAtividade').value = empresaEditando.tipoAtividade||'';
             // Renderiza primeiro os itens dinâmicos de Outras para permitir marcação
             renderOutrasObrigacoesFromEmpresa(empresaEditando);
             renderObrigacoesDinamicasFromEmpresa(empresaEditando);
