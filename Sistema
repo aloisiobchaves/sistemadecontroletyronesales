@@ -177,6 +177,11 @@
                                         <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinf">
                                         <label class="form-check-label" for="obrigReinf">EFD-Reinf</label>
                                     </div>
+                                    <div id="municipaisObrigacoesContainer" class="mt-2"></div>
+                                    <div class="input-group input-group-sm mt-2">
+                                        <input type="text" class="form-control" id="inputObrigacaoMunicipal" placeholder="Adicionar obrigação municipal">
+                                        <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoMunicipal"><i class="fas fa-plus"></i></button>
+                                    </div>
                                 </div>
 
                                 <div class="col-md-4">
@@ -192,6 +197,11 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="IRPJ/CSLL" id="obrigIrpjCsllEst">
                                         <label class="form-check-label" for="obrigIrpjCsllEst">NF-e (Entradas e Saídas)</label>
+                                    </div>
+                                    <div id="estaduaisObrigacoesContainer" class="mt-2"></div>
+                                    <div class="input-group input-group-sm mt-2">
+                                        <input type="text" class="form-control" id="inputObrigacaoEstadual" placeholder="Adicionar obrigação estadual">
+                                        <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoEstadual"><i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
 
@@ -220,6 +230,11 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="EFD-Reinf" id="obrigReinfFed">
                                         <label class="form-check-label" for="obrigReinfFed">EFD-Reinf</label>
+                                    </div>
+                                    <div id="federaisObrigacoesContainer" class="mt-2"></div>
+                                    <div class="input-group input-group-sm mt-2">
+                                        <input type="text" class="form-control" id="inputObrigacaoFederal" placeholder="Adicionar obrigação federal">
+                                        <button class="btn btn-outline-primary" type="button" id="btnAddObrigacaoFederal"><i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -270,6 +285,11 @@
                                         <label class="form-check-label" for="dmob">DMOB (Todos os regimes)</label>
                                     </div>
                                 </div>
+                            </div>
+                            <div id="declaracoesAnuaisContainer" class="mt-2"></div>
+                            <div class="input-group input-group-sm mt-2">
+                                <input type="text" class="form-control" id="inputDeclaracaoAnual" placeholder="Adicionar declaração anual">
+                                <button class="btn btn-outline-primary" type="button" id="btnAddDeclaracaoAnual"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
 
@@ -403,6 +423,22 @@
             const label = document.createElement('label'); label.className='form-check-label'; label.setAttribute('for', id); label.textContent = nome;
             wrap.appendChild(input); wrap.appendChild(label); cont.appendChild(wrap);
         }
+        // Criação dinâmica de checkboxes para Municipais/Estaduais/Federais
+        function addObrigacaoDinamica(tipo, nome, marcar=true){
+            let containerId='', sufix='';
+            if(tipo==='mun'){ containerId='municipaisObrigacoesContainer'; sufix=''; }
+            if(tipo==='est'){ containerId='estaduaisObrigacoesContainer'; sufix='Est'; }
+            if(tipo==='fed'){ containerId='federaisObrigacoesContainer'; sufix='Fed'; }
+            const cont = byId(containerId); if(!cont) return;
+            const seletorSufix = sufix ? `[id$="${sufix}"]` : `:not([id$="Est"]):not([id$="Fed"]):not([id$="Out"])`;
+            const jaExiste = Array.from(document.querySelectorAll(`[id^="obrig"]${seletorSufix}`)).some(i=>i.value.toLowerCase()===nome.toLowerCase());
+            if(jaExiste) return;
+            const id = `obrig${gerarId()}${sufix}`;
+            const wrap = document.createElement('div'); wrap.className='form-check';
+            const input = document.createElement('input'); input.className='form-check-input'; input.type='checkbox'; input.value=nome; input.id=id; input.checked=!!marcar;
+            const label = document.createElement('label'); label.className='form-check-label'; label.setAttribute('for', id); label.textContent = nome;
+            wrap.appendChild(input); wrap.appendChild(label); cont.appendChild(wrap);
+        }
         function renderOutrasObrigacoesFromEmpresa(emp){
             const cont = byId('outrasObrigacoesContainer'); if(!cont) return;
             cont.innerHTML='';
@@ -410,6 +446,37 @@
             // evita duplicar itens já existentes como estáticos (ex.: Contabilidade)
             const existentes = new Set(Array.from(document.querySelectorAll('[id^="obrig"][id$="Out"]')).map(i=>i.value));
             lista.forEach(nome=>{ if(!existentes.has(nome)) addOutraObrigacaoCheckbox(nome, false) });
+        }
+        function renderObrigacoesDinamicasFromEmpresa(emp){
+            const map = [
+                {tipo:'mun', container:'municipaisObrigacoesContainer', lista: emp?.obrigacoesMensais?.municipais||[], sufix:''},
+                {tipo:'est', container:'estaduaisObrigacoesContainer', lista: emp?.obrigacoesMensais?.estaduais||[], sufix:'Est'},
+                {tipo:'fed', container:'federaisObrigacoesContainer', lista: emp?.obrigacoesMensais?.federais||[], sufix:'Fed'},
+            ];
+            map.forEach(({tipo, container, lista, sufix})=>{
+                const cont = byId(container); if(!cont) return; cont.innerHTML='';
+                const existentes = sufix
+                    ? new Set(Array.from(document.querySelectorAll(`[id^="obrig"][id$="${sufix}"]`)).map(i=>i.value))
+                    : new Set(Array.from(document.querySelectorAll('[id^="obrig"]:not([id$="Est"]):not([id$="Fed"]):not([id$="Out"])')).map(i=>i.value));
+                lista.forEach(nome=>{ if(!existentes.has(nome)) addObrigacaoDinamica(tipo, nome, false); });
+            });
+        }
+        // Dinâmicas para Declarações Anuais
+        function addDeclaracaoAnualDinamica(nome, marcar=true){
+            const cont = byId('declaracoesAnuaisContainer'); if(!cont) return;
+            const jaExiste = Array.from(document.querySelectorAll('.declaração-anual')).some(i=>i.value.toLowerCase()===nome.toLowerCase());
+            if(jaExiste) return;
+            const id = `dec${gerarId()}`;
+            const wrap = document.createElement('div'); wrap.className='form-check';
+            const input = document.createElement('input'); input.className='form-check-input declaração-anual'; input.type='checkbox'; input.value=nome; input.id=id; input.checked=!!marcar;
+            const label = document.createElement('label'); label.className='form-check-label'; label.setAttribute('for', id); label.textContent = nome;
+            wrap.appendChild(input); wrap.appendChild(label); cont.appendChild(wrap);
+        }
+        function renderDeclaracoesAnuaisFromEmpresa(emp){
+            const cont = byId('declaracoesAnuaisContainer'); if(!cont) return; cont.innerHTML='';
+            const lista = emp?.declaracoesAnuais||[];
+            const existentes = new Set(Array.from(document.querySelectorAll('.declaração-anual')).map(i=>i.value));
+            lista.forEach(nome=>{ if(!existentes.has(nome)) addDeclaracaoAnualDinamica(nome, false); });
         }
 
         // ======= CNPJ (BrasilAPI + fallback)
@@ -452,6 +519,10 @@
                 setCNPJStatus('');
                 const cont = byId('outrasObrigacoesContainer'); if(cont) cont.innerHTML='';
                 const inp = byId('inputOutraObrigacao'); if(inp) inp.value='';
+                const cMun = byId('municipaisObrigacoesContainer'); if(cMun) cMun.innerHTML=''; const iMun = byId('inputObrigacaoMunicipal'); if(iMun) iMun.value='';
+                const cEst = byId('estaduaisObrigacoesContainer'); if(cEst) cEst.innerHTML=''; const iEst = byId('inputObrigacaoEstadual'); if(iEst) iEst.value='';
+                const cFed = byId('federaisObrigacoesContainer'); if(cFed) cFed.innerHTML=''; const iFed = byId('inputObrigacaoFederal'); if(iFed) iFed.value='';
+                const cDec = byId('declaracoesAnuaisContainer'); if(cDec) cDec.innerHTML=''; const iDec = byId('inputDeclaracaoAnual'); if(iDec) iDec.value='';
             });
             byId('btnNovaTarefa').addEventListener('click', novaTarefa);
             byId('btnSalvarTarefa').addEventListener('click', salvarTarefa);
@@ -462,7 +533,7 @@
                 if (cnpjInput.value !== digits) cnpjInput.value = digits;
                 if (digits.length===14) tryFetchCNPJ();
             });
-            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus(''); const cont = byId('outrasObrigacoesContainer'); if(cont) cont.innerHTML=''; const inp = byId('inputOutraObrigacao'); if(inp) inp.value=''; });
+            byId('modalEmpresa').addEventListener('hidden.bs.modal', ()=>{ byId('formEmpresa').reset(); byId('empresaId').value=''; setCNPJStatus(''); const cont = byId('outrasObrigacoesContainer'); if(cont) cont.innerHTML=''; const inp = byId('inputOutraObrigacao'); if(inp) inp.value=''; const cMun = byId('municipaisObrigacoesContainer'); if(cMun) cMun.innerHTML=''; const iMun = byId('inputObrigacaoMunicipal'); if(iMun) iMun.value=''; const cEst = byId('estaduaisObrigacoesContainer'); if(cEst) cEst.innerHTML=''; const iEst = byId('inputObrigacaoEstadual'); if(iEst) iEst.value=''; const cFed = byId('federaisObrigacoesContainer'); if(cFed) cFed.innerHTML=''; const iFed = byId('inputObrigacaoFederal'); if(iFed) iFed.value=''; const cDec = byId('declaracoesAnuaisContainer'); if(cDec) cDec.innerHTML=''; const iDec = byId('inputDeclaracaoAnual'); if(iDec) iDec.value=''; });
             // Outras obrigações: adicionar item
             const btnAddOut = byId('btnAddOutraObrigacao');
             const inputOut = byId('inputOutraObrigacao');
@@ -483,6 +554,35 @@
             byId('btnMarcarTudo').addEventListener('click', ()=>toggleAllChecklist(true));
             byId('btnLimparTudo').addEventListener('click', ()=>toggleAllChecklist(false));
             byId('btnExportarCSV').addEventListener('click', exportarChecklistCSV);
+
+            // Dinâmicos: Municipais
+            const btnAddMun = byId('btnAddObrigacaoMunicipal'); const inputMun = byId('inputObrigacaoMunicipal');
+            if(btnAddMun && inputMun){
+                const h=()=>{ const v=(inputMun.value||'').trim(); if(!v) return; addObrigacaoDinamica('mun', v, true); inputMun.value=''; inputMun.focus(); };
+                btnAddMun.addEventListener('click', h);
+                inputMun.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); h(); } });
+            }
+            // Dinâmicos: Estaduais
+            const btnAddEst = byId('btnAddObrigacaoEstadual'); const inputEst = byId('inputObrigacaoEstadual');
+            if(btnAddEst && inputEst){
+                const h=()=>{ const v=(inputEst.value||'').trim(); if(!v) return; addObrigacaoDinamica('est', v, true); inputEst.value=''; inputEst.focus(); };
+                btnAddEst.addEventListener('click', h);
+                inputEst.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); h(); } });
+            }
+            // Dinâmicos: Federais
+            const btnAddFed = byId('btnAddObrigacaoFederal'); const inputFed = byId('inputObrigacaoFederal');
+            if(btnAddFed && inputFed){
+                const h=()=>{ const v=(inputFed.value||'').trim(); if(!v) return; addObrigacaoDinamica('fed', v, true); inputFed.value=''; inputFed.focus(); };
+                btnAddFed.addEventListener('click', h);
+                inputFed.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); h(); } });
+            }
+            // Dinâmicos: Declarações Anuais
+            const btnAddDec = byId('btnAddDeclaracaoAnual'); const inputDec = byId('inputDeclaracaoAnual');
+            if(btnAddDec && inputDec){
+                const h=()=>{ const v=(inputDec.value||'').trim(); if(!v) return; addDeclaracaoAnualDinamica(v, true); inputDec.value=''; inputDec.focus(); };
+                btnAddDec.addEventListener('click', h);
+                inputDec.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); h(); } });
+            }
 
             // Competência padrão = mês atual
             const now = new Date();
@@ -699,10 +799,12 @@
             byId('responsavel').value = empresaEditando.responsavel||'';
             // Renderiza primeiro os itens dinâmicos de Outras para permitir marcação
             renderOutrasObrigacoesFromEmpresa(empresaEditando);
+            renderObrigacoesDinamicasFromEmpresa(empresaEditando);
             marcarObrigacoes(empresaEditando.obrigacoesMensais.municipais,'mun');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.estaduais,'est');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.federais,'fed');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.outras,'out');
+            renderDeclaracoesAnuaisFromEmpresa(empresaEditando);
             document.querySelectorAll('.declaração-anual').forEach(i=>{ i.checked=(empresaEditando.declaracoesAnuais||[]).includes(i.value) });
             byId('modalEmpresaTitulo').textContent='Editar Empresa';
             bootstrap.Modal.getInstance(byId('modalVisualizarEmpresa')).hide();
