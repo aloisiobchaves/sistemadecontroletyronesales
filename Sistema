@@ -74,6 +74,18 @@
                         <div class="col-md-3">
                             <label class="form-label" for="selResponsavelChecklist">Responsável Contábil/Fiscal</label>
                             <select class="form-select" id="selResponsavelChecklist"></select>
+                            <ul class="nav nav-pills mt-2" id="subTabsChecklist" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="subChecklist-tab" data-bs-toggle="tab" data-bs-target="#paneChecklist" type="button" role="tab" aria-controls="paneChecklist" aria-selected="true">
+                                        Checklist
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="subGerar-tab" data-bs-toggle="tab" data-bs-target="#paneGerar" type="button" role="tab" aria-controls="paneGerar" aria-selected="false">
+                                        Gerar
+                                    </button>
+                                </li>
+                            </ul>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label" for="competencia">Competência</label>
@@ -87,16 +99,28 @@
                     </div>
                 </div>
 
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h5 class="mb-1" id="ckNomeEmpresa">—</h5>
-                        <p class="mb-2">
-                            <strong>CNPJ:</strong> <span id="ckCnpj">—</span> &nbsp;•&nbsp;
-                            <strong>Responsável:</strong> <span id="ckResponsavel">—</span>
-                        </p>
-                        <hr>
-                        <h6 class="mb-2">Tarefas do mês</h6>
-                        <div id="listaChecklist"></div>
+                <div class="tab-content mt-3" id="subTabsChecklistContent">
+                    <div class="tab-pane fade show active" id="paneChecklist" role="tabpanel" aria-labelledby="subChecklist-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-1" id="ckNomeEmpresa">—</h5>
+                                <p class="mb-2">
+                                    <strong>CNPJ:</strong> <span id="ckCnpj">—</span> &nbsp;•&nbsp;
+                                    <strong>Responsável:</strong> <span id="ckResponsavel">—</span>
+                                </p>
+                                <hr>
+                                <h6 class="mb-2">Tarefas do mês</h6>
+                                <div id="listaChecklist"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="paneGerar" role="tabpanel" aria-labelledby="subGerar-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="mb-2">Empresas do responsável selecionado</h6>
+                                <div id="listaEmpresasResponsavel" class="row"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1012,6 +1036,7 @@
             // mantém seleção anterior se existir e ainda compatível com o filtro
             if(lista.find(e=>e.id===cur)) sel.value=cur; else sel.value='';
             refreshChecklist();
+            renderListaEmpresasResponsavel();
         }
 
         function preencherSelectResponsavelChecklist(){
@@ -1028,6 +1053,53 @@
             sel.innerHTML = '<option value="">Todos os responsáveis...</option>';
             responsaveis.forEach(r=>{ const opt=document.createElement('option'); opt.value=r; opt.textContent=r; sel.appendChild(opt) });
             if(cur && responsaveis.includes(cur)) sel.value=cur;
+            renderListaEmpresasResponsavel();
+        }
+
+        function renderListaEmpresasResponsavel(){
+            const cont = byId('listaEmpresasResponsavel'); if(!cont) return;
+            const filtro = (byId('selResponsavelChecklist')?.value||'').trim();
+            const filtroNorm = normalizarTexto(filtro);
+            const lista = filtroNorm ? empresas.filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm) : [];
+            cont.innerHTML = '';
+            if(!filtro){
+                cont.innerHTML = '<div class="col-12"><p class="text-muted">Selecione um responsável para listar as empresas.</p></div>';
+                return;
+            }
+            if(!lista.length){
+                cont.innerHTML = '<div class="col-12"><p class="text-muted">Nenhuma empresa cadastrada para este responsável.</p></div>';
+                return;
+            }
+            lista.forEach(emp=>{
+                cont.innerHTML += `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title mb-1">${emp.nome}</h6>
+                                <small class="text-muted d-block">CNPJ: ${emp.cnpj||''}</small>
+                                <div class="mt-2 d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" data-action="abrir-checklist" data-emp-id="${emp.id}"><i class="fa-solid fa-list-check me-1"></i>Abrir checklist</button>
+                                    <button class="btn btn-sm btn-outline-secondary" data-action="selecionar-empresa" data-emp-id="${emp.id}"><i class="fa-solid fa-hand-pointer me-1"></i>Selecionar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            // Delegação de eventos para botões
+            cont.querySelectorAll('button[data-action]')?.forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const empId = btn.getAttribute('data-emp-id');
+                    const action = btn.getAttribute('data-action');
+                    if(!empId) return;
+                    const sel = byId('selEmpresaChecklist');
+                    sel.value = empId;
+                    if(action==='abrir-checklist'){
+                        const tabTrigger = document.querySelector('#subChecklist-tab');
+                        if(tabTrigger){ new bootstrap.Tab(tabTrigger).show(); }
+                    }
+                    refreshChecklist();
+                });
+            });
         }
 
         function getEmpresaSelecionada(){
