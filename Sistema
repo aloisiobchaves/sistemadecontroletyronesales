@@ -119,6 +119,13 @@
                             <div class="card-body">
                                 <h6 class="mb-2">Empresas do responsável selecionado</h6>
                                 <div id="listaEmpresasResponsavel" class="row"></div>
+                                <hr class="my-3">
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <button class="btn btn-primary" id="btnGerarRelatorio"><i class="fa-solid fa-file-lines me-1"></i>Gerar relatório</button>
+                                    <button class="btn btn-outline-primary" id="btnExportarRelatorioCSV"><i class="fa-solid fa-file-csv me-1"></i>Exportar CSV</button>
+                                    <button class="btn btn-outline-secondary" id="btnImprimirRelatorio"><i class="fa-solid fa-print me-1"></i>Imprimir</button>
+                                </div>
+                                <div id="relatorioResponsavel"></div>
                             </div>
                         </div>
                     </div>
@@ -634,6 +641,9 @@
             byId('btnMarcarTudo').addEventListener('click', ()=>toggleAllChecklist(true));
             byId('btnLimparTudo').addEventListener('click', ()=>toggleAllChecklist(false));
             byId('btnExportarCSV').addEventListener('click', exportarChecklistCSV);
+            const btnRel = byId('btnGerarRelatorio'); if(btnRel){ btnRel.addEventListener('click', gerarRelatorioResponsavel); }
+            const btnRelCsv = byId('btnExportarRelatorioCSV'); if(btnRelCsv){ btnRelCsv.addEventListener('click', exportarRelatorioCSVResponsavel); }
+            const btnRelPrint = byId('btnImprimirRelatorio'); if(btnRelPrint){ btnRelPrint.addEventListener('click', imprimirRelatorioResponsavel); }
 
             // Dinâmicos: Municipais
             const btnAddMun = byId('btnAddObrigacaoMunicipal'); const inputMun = byId('inputObrigacaoMunicipal');
@@ -1215,6 +1225,101 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href=url; a.download=`checklist_${emp.nome}_${comp}.csv`; a.click();
             URL.revokeObjectURL(url);
+        }
+
+        // ======= Relatório (Gerar) por Responsável
+        function coletarItensObrigacoesFromEmpresa(emp){
+            return [
+                ...(emp.obrigacoesMensais?.municipais||[]).map(x=>({area:'Municipal', nome:x})),
+                ...(emp.obrigacoesMensais?.estaduais||[]).map(x=>({area:'Estadual', nome:x})),
+                ...(emp.obrigacoesMensais?.federais||[]).map(x=>({area:'Federal', nome:x})),
+                ...(emp.obrigacoesMensais?.outras||[]).map(x=>({area:'Outras obrigações', nome:x}))
+            ];
+        }
+
+        function gerarRelatorioResponsavel(){
+            const cont = byId('relatorioResponsavel'); if(!cont) return;
+            cont.innerHTML = '';
+            const resp = (byId('selResponsavelChecklist')?.value||'').trim();
+            const comp = byId('competencia')?.value||'';
+            if(!resp){ cont.innerHTML = '<div class="alert alert-warning">Selecione um responsável para gerar o relatório.</div>'; return; }
+            if(!comp){ cont.innerHTML = '<div class="alert alert-warning">Selecione a competência (mês/ano) para gerar o relatório.</div>'; return; }
+            const filtroNorm = normalizarTexto(resp);
+            const lista = (empresas||[]).filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm);
+            if(!lista.length){ cont.innerHTML = '<div class="alert alert-info">Nenhuma empresa encontrada para o responsável selecionado.</div>'; return; }
+
+            let totalGlobal = 0;
+            let html = '';
+            html += `<div class="mb-3"><h6 class="mb-1">Relatório de tarefas concluídas</h6><small class="text-muted">Responsável: ${resp} • Competência: ${comp}</small></div>`;
+
+            lista.forEach(emp=>{
+                const itens = coletarItensObrigacoesFromEmpresa(emp);
+                if(!itens.length) return;
+                const estado = carregarEstadoChecklist(emp.id, comp);
+                const concluidas = itens.filter(it=> estado[`${it.area}|${it.nome}`]);
+                if(!concluidas.length) return;
+                totalGlobal += concluidas.length;
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div><strong>${emp.nome}</strong> <small class="text-muted">CNPJ: ${emp.cnpj||''}</small></div>
+                                <span class="badge bg-success">${concluidas.length} concluída(s)</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr><th style="width: 160px;">Área</th><th>Tarefa</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        ${concluidas.map(c=>`<tr><td>${c.area}</td><td>${c.nome}</td></tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            if(totalGlobal===0){ cont.innerHTML = '<div class="alert alert-info">Nenhuma tarefa concluída nesta competência para o responsável selecionado.</div>'; return; }
+            cont.innerHTML = html;
+        }
+
+        function exportarRelatorioCSVResponsavel(){
+            const resp = (byId('selResponsavelChecklist')?.value||'').trim();
+            const comp = byId('competencia')?.value||'';
+            if(!resp || !comp) return;
+            const filtroNorm = normalizarTexto(resp);
+            const lista = (empresas||[]).filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm);
+            const rows = [['Empresa','CNPJ','Responsável','Competência','Área','Tarefa','Concluída']];
+            let temDados = false;
+            lista.forEach(emp=>{
+                const itens = coletarItensObrigacoesFromEmpresa(emp);
+                if(!itens.length) return;
+                const estado = carregarEstadoChecklist(emp.id, comp);
+                itens.forEach(it=>{
+                    const key = `${it.area}|${it.nome}`;
+                    if(estado[key]){ rows.push([emp.nome, emp.cnpj||'', emp.responsavel||'', comp, it.area, it.nome, 'Sim']); temDados = true; }
+                });
+            });
+            if(!temDados){ return; }
+            const csv = rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const nomeArq = `relatorio_concluidas_${resp.replace(/\s+/g,'_')}_${comp}.csv`;
+            const a = document.createElement('a'); a.href=url; a.download=nomeArq; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function imprimirRelatorioResponsavel(){
+            const cont = byId('relatorioResponsavel'); if(!cont) return;
+            if(!cont.innerHTML.trim()){ gerarRelatorioResponsavel(); }
+            if(!cont.innerHTML.trim()) return;
+            const w = window.open('', 'relatorio', 'width=1024,height=768');
+            if(!w) return;
+            w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Relatório</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body class="p-3">${cont.outerHTML}</body></html>`);
+            w.document.close();
+            w.focus();
+            w.print();
         }
     </script>
 </body>
