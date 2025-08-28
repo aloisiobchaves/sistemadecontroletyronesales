@@ -27,7 +27,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="#"><i class="fas fa-calculator me-2"></i>Controle FiscoContábil</a>
-            <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modalEmpresa">
+            <button id="btnNovaEmpresa" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modalEmpresa">
                 <i class="fas fa-plus me-1"></i> Nova Empresa
             </button>
         </div>
@@ -441,6 +441,14 @@
             byId('btnBuscar').addEventListener('click', buscarEmpresas);
             byId('inputBusca').addEventListener('keyup', buscarEmpresas);
             byId('btnEditarEmpresa').addEventListener('click', prepararEdicaoEmpresa);
+            byId('btnNovaEmpresa').addEventListener('click', ()=>{
+                empresaEditando = null;
+                byId('formEmpresa').reset();
+                byId('empresaId').value='';
+                byId('modalEmpresaTitulo').textContent='Nova Empresa';
+                document.querySelectorAll('.declaração-anual').forEach(cb=>cb.checked=false);
+                setCNPJStatus('');
+            });
             byId('btnNovaTarefa').addEventListener('click', novaTarefa);
             byId('btnSalvarTarefa').addEventListener('click', salvarTarefa);
             const cnpjInput = byId('cnpj');
@@ -638,6 +646,7 @@
             marcarObrigacoes(empresaEditando.obrigacoesMensais.federais,'fed');
             marcarObrigacoes(empresaEditando.obrigacoesMensais.outras,'out');
             document.querySelectorAll('.declaração-anual').forEach(i=>{ i.checked=(empresaEditando.declaracoesAnuais||[]).includes(i.value) });
+            byId('modalEmpresaTitulo').textContent='Editar Empresa';
             bootstrap.Modal.getInstance(byId('modalVisualizarEmpresa')).hide();
             new bootstrap.Modal(byId('modalEmpresa')).show();
         }
