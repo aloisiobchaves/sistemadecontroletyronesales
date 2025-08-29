@@ -109,7 +109,13 @@
                                     <strong>Responsável:</strong> <span id="ckResponsavel">—</span>
                                 </p>
                                 <hr>
-                                <h6 class="mb-2">Tarefas do mês</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Tarefas do mês</h6>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" id="ckSelecionarTodas">
+                                        <label class="form-check-label" for="ckSelecionarTodas">Selecionar todas</label>
+                                    </div>
+                                </div>
                                 <div id="listaChecklist"></div>
                             </div>
                         </div>
@@ -640,6 +646,15 @@
             byId('competencia').addEventListener('change', refreshChecklist);
             byId('btnMarcarTudo').addEventListener('click', ()=>toggleAllChecklist(true));
             byId('btnLimparTudo').addEventListener('click', ()=>toggleAllChecklist(false));
+            const ckSelTodas = byId('ckSelecionarTodas');
+            if(ckSelTodas){
+                ckSelTodas.addEventListener('change', ()=>{
+                    const flag = ckSelTodas.checked;
+                    toggleAllChecklist(flag);
+                    // após aplicar, garantir que estado visual permaneça consistente (sem indeterminate)
+                    ckSelTodas.indeterminate = false;
+                });
+            }
             byId('btnExportarCSV').addEventListener('click', exportarChecklistCSV);
             const btnRel = byId('btnGerarRelatorio'); if(btnRel){ btnRel.addEventListener('click', gerarRelatorioResponsavel); }
             const btnRelCsv = byId('btnExportarRelatorioCSV'); if(btnRelCsv){ btnRelCsv.addEventListener('click', exportarRelatorioCSVResponsavel); }
@@ -1146,6 +1161,8 @@
 
             const cont = byId('listaChecklist');
             cont.innerHTML='';
+            const ckSelTodas = byId('ckSelecionarTodas');
+            if(ckSelTodas){ ckSelTodas.checked=false; ckSelTodas.indeterminate=false; ckSelTodas.disabled = !emp || !comp; }
             if(!emp){ cont.innerHTML='<p class="text-muted">Selecione uma empresa para ver o checklist.</p>'; return; }
             if(!comp){ cont.innerHTML='<p class="text-muted">Selecione a competência (mês/ano) para ver o checklist.</p>'; return; }
 
@@ -1181,12 +1198,14 @@
             });
 
             // Listener dos checkboxes
-            cont.querySelectorAll('input[type="checkbox"]').forEach(chk=>{
+            const allChks = Array.from(cont.querySelectorAll('input[type="checkbox"]'));
+            allChks.forEach(chk=>{
                 chk.addEventListener('change', ()=>{
                     const k = chk.dataset.key;
                     const cur = carregarEstadoChecklist(emp.id, comp);
                     cur[k] = chk.checked;
                     salvarEstadoChecklist(emp.id, comp, cur);
+                    syncSelecionarTodasToggle(allChks);
                 });
             });
             // Listener dos selects de status (apenas para 'Com Contabilidade')
@@ -1198,6 +1217,9 @@
                     salvarEstadoChecklist(emp.id, comp, cur);
                 });
             });
+
+            // Ajusta o estado do "Selecionar todas" conforme itens atuais
+            syncSelecionarTodasToggle(allChks);
         }
 
         function storageKeyChecklist(empId, competencia){ return `checklist_${empId}_${competencia}` }
@@ -1210,8 +1232,19 @@
         function toggleAllChecklist(flag){
             const emp = getEmpresaSelecionada(); const comp = byId('competencia').value; if(!emp||!comp) return;
             const cur = carregarEstadoChecklist(emp.id, comp);
-            document.querySelectorAll('#listaChecklist input[type="checkbox"]').forEach(chk=>{ chk.checked=flag; cur[chk.dataset.key]=flag });
+            const allChks = document.querySelectorAll('#listaChecklist input[type="checkbox"]');
+            allChks.forEach(chk=>{ chk.checked=flag; cur[chk.dataset.key]=flag });
             salvarEstadoChecklist(emp.id, comp, cur);
+            const ckSelTodas = byId('ckSelecionarTodas');
+            if(ckSelTodas){ ckSelTodas.checked = !!flag; ckSelTodas.indeterminate = false; }
+        }
+
+        function syncSelecionarTodasToggle(chks){
+            const ckSelTodas = byId('ckSelecionarTodas'); if(!ckSelTodas) return;
+            const total = chks.length;
+            const marcadas = chks.filter(c=>c.checked).length;
+            ckSelTodas.checked = total>0 && marcadas===total;
+            ckSelTodas.indeterminate = marcadas>0 && marcadas<total;
         }
         function exportarChecklistCSV(){
             const emp = getEmpresaSelecionada(); const comp = byId('competencia').value; if(!emp||!comp) return;
