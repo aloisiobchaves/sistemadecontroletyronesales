@@ -820,6 +820,14 @@
             if(!lista.length){ cont.innerHTML = '<div class="col-12"><p class="text-muted">Nenhuma empresa cadastrada.</p></div>'; return; }
 
             const hasFlag = (emp, flag)=> (emp?.obrigacoesMensais?.outras||[]).includes(flag);
+            const filtroSel = (byId('filtroContab')?.value||'todos');
+            const listaFiltrada = lista.filter(emp=>{
+                if(filtroSel==='com'){ return hasFlag(emp,'Com Contabilidade'); }
+                if(filtroSel==='sem'){ return hasFlag(emp,'Sem Contabilidade'); }
+                if(filtroSel==='nao'){ return !hasFlag(emp,'Com Contabilidade') && !hasFlag(emp,'Sem Contabilidade'); }
+                return true;
+            });
+            if(!listaFiltrada.length){ cont.innerHTML='<div class="alert alert-info">Nenhuma empresa correspondente ao filtro.</div>'; return; }
             const com = lista.filter(e=> hasFlag(e,'Com Contabilidade'));
             const sem = lista.filter(e=> hasFlag(e,'Sem Contabilidade'));
             const nao = lista.filter(e=> !hasFlag(e,'Com Contabilidade') && !hasFlag(e,'Sem Contabilidade'));
@@ -1590,7 +1598,7 @@
             let html = '';
             html += `<div class=\"mb-3\"><h6 class=\"mb-1\">Relatório de Contabilidade</h6><small class=\"text-muted\">Responsável: ${resp||'Todos os responsáveis'} • Competência: ${comp}</small></div>`;
 
-            lista.forEach(emp=>{
+            listaFiltrada.forEach(emp=>{
                 const estado = carregarEstadoChecklist(emp.id, comp);
                 const flagCom = hasFlag(emp, 'Com Contabilidade');
                 const flagSem = hasFlag(emp, 'Sem Contabilidade');
@@ -1623,7 +1631,15 @@
             const rows = [['Empresa','CNPJ','Responsável','Competência','Classificação Contabilidade','Status']];
             let temDados=false;
             const hasFlag = (emp, flag)=> (emp?.obrigacoesMensais?.outras||[]).includes(flag);
-            lista.forEach(emp=>{
+            const filtroSel = (byId('filtroContab')?.value||'todos');
+            const listaFiltrada = lista.filter(emp=>{
+                if(filtroSel==='com'){ return hasFlag(emp,'Com Contabilidade'); }
+                if(filtroSel==='sem'){ return hasFlag(emp,'Sem Contabilidade'); }
+                if(filtroSel==='nao'){ return !hasFlag(emp,'Com Contabilidade') && !hasFlag(emp,'Sem Contabilidade'); }
+                return true;
+            });
+            if(!listaFiltrada.length) return;
+            listaFiltrada.forEach(emp=>{
                 const estado = carregarEstadoChecklist(emp.id, comp);
                 const flagCom = hasFlag(emp,'Com Contabilidade');
                 const flagSem = hasFlag(emp,'Sem Contabilidade');
