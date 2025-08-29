@@ -787,7 +787,7 @@
                 const diff = v ? Math.ceil((v - new Date())/(1000*60*60*24)) : Infinity;
                 const cardClass = v && diff<=30 ? 'vencimento-proximo':'';
                 wrap.innerHTML += `
-                    <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card card-empresa ${cardClass}">
                             <div class="card-body">
                                 <h5 class="card-title">${empresa.nome}</h5>
@@ -820,14 +820,6 @@
             if(!lista.length){ cont.innerHTML = '<div class="col-12"><p class="text-muted">Nenhuma empresa cadastrada.</p></div>'; return; }
 
             const hasFlag = (emp, flag)=> (emp?.obrigacoesMensais?.outras||[]).includes(flag);
-            const filtroSel = (byId('filtroContab')?.value||'todos');
-            const listaFiltrada = lista.filter(emp=>{
-                if(filtroSel==='com'){ return hasFlag(emp,'Com Contabilidade'); }
-                if(filtroSel==='sem'){ return hasFlag(emp,'Sem Contabilidade'); }
-                if(filtroSel==='nao'){ return !hasFlag(emp,'Com Contabilidade') && !hasFlag(emp,'Sem Contabilidade'); }
-                return true;
-            });
-            if(!listaFiltrada.length){ cont.innerHTML='<div class="alert alert-info">Nenhuma empresa correspondente ao filtro.</div>'; return; }
             const filtroSel = (byId('filtroContab')?.value||'todos');
             const listaFiltrada = lista.filter(emp=>{
                 if(filtroSel==='com'){ return hasFlag(emp,'Com Contabilidade'); }
@@ -881,14 +873,6 @@
             };
 
             const filtro = (byId('filtroContab')?.value||'todos');
-            const filtroSel = (byId('filtroContab')?.value||'todos');
-            const listaFiltrada = lista.filter(emp=>{
-                if(filtroSel==='com'){ return hasFlag(emp,'Com Contabilidade'); }
-                if(filtroSel==='sem'){ return hasFlag(emp,'Sem Contabilidade'); }
-                if(filtroSel==='nao'){ return !hasFlag(emp,'Com Contabilidade') && !hasFlag(emp,'Sem Contabilidade'); }
-                return true;
-            });
-
             let html = '';
             if(filtro==='todos'){
                 html = `${makeCard('Com Contabilidade', com)}${makeCard('Sem Contabilidade', sem)}${nao.length ? makeCard('Não informado', nao) : ''}`;
@@ -1196,7 +1180,7 @@
                 const diff = v ? Math.ceil((v - new Date())/(1000*60*60*24)) : Infinity;
                 const cardClass = v && diff<=30 ? 'vencimento-proximo':'';
                 wrap.innerHTML += `
-                    <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card card-empresa ${cardClass}">
                             <div class="card-body">
                                 <h5 class="card-title">${empresa.nome}</h5>
@@ -1682,22 +1666,8 @@
             if(!cont.innerHTML.trim()) return;
             const w = window.open('', 'relatorio_contab', 'width=1024,height=768');
             if(!w) return;
-            const html = `<!DOCTYPE html><html lang="pt-BR"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Relatório Contabilidade</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-@media print { @page { size: A4 portrait; margin: 12mm; } .no-print { display:none !important; } }
-body { color:#212529; }
-.table { font-size: 12px; }
-.table thead th { background: #f8f9fa; }
-small.text-muted { color:#6c757d !important; }
-.card { border: 1px solid #e9ecef; }
-</style>
-</head><body class="p-3"><div class="container-fluid">${cont.outerHTML}</div></body></html>`;
-            w.document.open(); w.document.write(html); w.document.close(); w.focus();
-            w.onload = ()=>{ try{ w.print(); w.close(); }catch(e){} };
-            setTimeout(()=>{ try{ w.print(); w.close(); }catch(e){} }, 300);
+            w.document.write(`<!DOCTYPE html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Relatório Contabilidade</title><link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\"></head><body class=\"p-3\">${cont.outerHTML}</body></html>`);
+            w.document.close(); w.focus(); w.print();
         }
     </script>
 </body>
