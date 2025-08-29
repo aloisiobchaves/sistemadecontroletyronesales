@@ -1093,14 +1093,10 @@
             const cont = byId('listaEmpresasResponsavel'); if(!cont) return;
             const filtro = (byId('selResponsavelChecklist')?.value||'').trim();
             const filtroNorm = normalizarTexto(filtro);
-            const lista = filtroNorm ? empresas.filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm) : [];
+            const lista = filtroNorm ? empresas.filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm) : (empresas||[]);
             cont.innerHTML = '';
-            if(!filtro){
-                cont.innerHTML = '<div class="col-12"><p class="text-muted">Selecione um responsável para listar as empresas.</p></div>';
-                return;
-            }
             if(!lista.length){
-                cont.innerHTML = '<div class="col-12"><p class="text-muted">Nenhuma empresa cadastrada para este responsável.</p></div>';
+                cont.innerHTML = '<div class="col-12"><p class="text-muted">Nenhuma empresa cadastrada.</p></div>';
                 return;
             }
             lista.forEach(emp=>{
@@ -1260,14 +1256,13 @@
             cont.innerHTML = '';
             const resp = (byId('selResponsavelChecklist')?.value||'').trim();
             const comp = byId('competencia')?.value||'';
-            if(!resp){ cont.innerHTML = '<div class="alert alert-warning">Selecione um responsável para gerar o relatório.</div>'; return; }
             if(!comp){ cont.innerHTML = '<div class="alert alert-warning">Selecione a competência (mês/ano) para gerar o relatório.</div>'; return; }
             const filtroNorm = normalizarTexto(resp);
-            const lista = (empresas||[]).filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm);
-            if(!lista.length){ cont.innerHTML = '<div class="alert alert-info">Nenhuma empresa encontrada para o responsável selecionado.</div>'; return; }
+            const lista = (empresas||[]).filter(e=> !filtroNorm || normalizarTexto(e.responsavel||'')===filtroNorm);
+            if(!lista.length){ cont.innerHTML = '<div class="alert alert-info">Nenhuma empresa encontrada.</div>'; return; }
 
             let html = '';
-            html += `<div class=\"mb-3\"><h6 class=\"mb-1\">Relatório do checklist</h6><small class=\"text-muted\">Responsável: ${resp} • Competência: ${comp} • Concluída: Sim/Não conforme marcado</small></div>`;
+            html += `<div class=\"mb-3\"><h6 class=\"mb-1\">Relatório do checklist</h6><small class=\"text-muted\">Responsável: ${resp||'Todos os responsáveis'} • Competência: ${comp} • Concluída: Sim/Não conforme marcado</small></div>`;
 
             lista.forEach(emp=>{
                 const itens = coletarItensObrigacoesFromEmpresa(emp);
@@ -1297,16 +1292,16 @@
                     </div>`;
             });
 
-            if(!html){ cont.innerHTML = '<div class=\"alert alert-info\">Nenhuma obrigação cadastrada para as empresas deste responsável.</div>'; return; }
+            if(!html){ cont.innerHTML = '<div class=\"alert alert-info\">Nenhuma obrigação cadastrada para as empresas selecionadas.</div>'; return; }
             cont.innerHTML = html;
         }
 
         function exportarRelatorioCSVResponsavel(){
             const resp = (byId('selResponsavelChecklist')?.value||'').trim();
             const comp = byId('competencia')?.value||'';
-            if(!resp || !comp) return;
+            if(!comp) return;
             const filtroNorm = normalizarTexto(resp);
-            const lista = (empresas||[]).filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm);
+            const lista = (empresas||[]).filter(e=> !filtroNorm || normalizarTexto(e.responsavel||'')===filtroNorm);
             const rows = [['Empresa','CNPJ','Responsável','Competência','Área','Tarefa','Concluída']];
             let temDados = false;
             lista.forEach(emp=>{
@@ -1325,7 +1320,8 @@
             const csv = rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
             const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
             const url = URL.createObjectURL(blob);
-            const nomeArq = `relatorio_checklist_${resp.replace(/\s+/g,'_')}_${comp}.csv`;
+            const nomeResp = resp ? resp.replace(/\s+/g,'_') : 'todos_responsaveis';
+            const nomeArq = `relatorio_checklist_${nomeResp}_${comp}.csv`;
             const a = document.createElement('a'); a.href=url; a.download=nomeArq; a.click();
             URL.revokeObjectURL(url);
         }
