@@ -725,6 +725,7 @@
             const btnRelContCsv = byId('btnExportarRelatorioContabCSV'); if(btnRelContCsv){ btnRelContCsv.addEventListener('click', exportarRelatorioContabCSV); }
             const btnRelContPrint = byId('btnImprimirRelatorioContab'); if(btnRelContPrint){ btnRelContPrint.addEventListener('click', imprimirRelatorioContab); }
             const selFiltroContab = byId('filtroContab'); if(selFiltroContab){ selFiltroContab.addEventListener('change', renderAbaContabilidade); }
+            const inpCompContab = byId('competenciaContab'); if(inpCompContab){ inpCompContab.addEventListener('change', renderAbaContabilidade); }
 
             // Dinâmicos: Municipais
             const btnAddMun = byId('btnAddObrigacaoMunicipal'); const inputMun = byId('inputObrigacaoMunicipal');
@@ -822,6 +823,7 @@
             const com = lista.filter(e=> hasFlag(e,'Com Contabilidade'));
             const sem = lista.filter(e=> hasFlag(e,'Sem Contabilidade'));
             const nao = lista.filter(e=> !hasFlag(e,'Com Contabilidade') && !hasFlag(e,'Sem Contabilidade'));
+            const compSel = byId('competenciaContab')?.value||'';
 
             const makeCard = (titulo, itens)=>{
                 return `
@@ -833,17 +835,29 @@
                             </div>
                             <div class="card-body p-0">
                                 ${itens.length ? `<div class="list-group list-group-flush">
-                                    ${itens.map(emp=>`
-                                        <div class="list-group-item">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <strong>${emp.nome}</strong>
-                                                    <div class="small text-muted">CNPJ: ${emp.cnpj||''}</div>
+                                    ${itens.map(emp=>{
+                                        let statusHtml = '';
+                                        if(titulo==='Com Contabilidade' && compSel){
+                                            const keyCom = 'Outras obrigações|Com Contabilidade';
+                                            const estado = carregarEstadoChecklist(emp.id, compSel);
+                                            const statusCom = estado[`status|${keyCom}`] || 'Pendente';
+                                            const cls = statusCom==='Escriturado' ? 'bg-success' : (statusCom==='Pendente' ? 'bg-warning text-dark' : 'bg-info');
+                                            statusHtml = `<span class="badge ${cls}">${statusCom}</span>`;
+                                        }
+                                        return `
+                                            <div class="list-group-item">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>${emp.nome}</strong>
+                                                        <div class="small text-muted">CNPJ: ${emp.cnpj||''}</div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="badge bg-secondary">${emp.responsavel||'—'}</span>
+                                                        ${statusHtml}
+                                                    </div>
                                                 </div>
-                                                <span class="badge bg-secondary">${emp.responsavel||'—'}</span>
-                                            </div>
-                                        </div>
-                                    `).join('')}
+                                            </div>`;
+                                    }).join('')}
                                 </div>` : '<div class="p-3 text-muted">Nenhuma empresa</div>'}
                             </div>
                         </div>
