@@ -1605,8 +1605,7 @@
                                 <strong>${emp.nome}</strong> <small class=\"text-muted\">CNPJ: ${emp.cnpj||''}</small>
                                 <div class=\"small text-muted\">Responsável: ${emp.responsavel||'—'}</div>
                             </div>
-                            <span class=\"badge ${flagCom?'bg-primary':(flagSem?'bg-secondary':'bg-warning text-dark')}\">${classificacao}</span>
-                            <span class=\"badge ${classificacao==='Com Contabilidade' ? (conclusao==='Escriturado'?'bg-success':(conclusao==='Pendente'?'bg-warning text-dark':'bg-info')) : 'bg-light text-dark'}\">${conclusao}</span>
+                            <div class=\"d-flex align-items-center gap-2\">\n                                <span class=\"badge ${flagCom?'bg-primary':(flagSem?'bg-secondary':'bg-warning text-dark')}\">${classificacao}</span>\n                                <span class=\"badge ${classificacao==='Com Contabilidade' ? (conclusao==='Escriturado'?'bg-success':(conclusao==='Pendente'?'bg-warning text-dark':'bg-info')) : 'bg-light text-dark'}\">${conclusao}</span>\n                            </div>
                         </div>
                     </div>`;
             });
