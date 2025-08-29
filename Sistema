@@ -46,6 +46,16 @@
                     <i class="fa-solid fa-list-check me-1"></i>Checklist Mensal
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="abaContabilidade-tab" data-bs-toggle="tab" data-bs-target="#abaContabilidade" type="button" role="tab" aria-controls="abaContabilidade" aria-selected="false">
+                    <i class="fa-solid fa-book me-1"></i>Contabilidade
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="abaCertificados-tab" data-bs-toggle="tab" data-bs-target="#abaCertificados" type="button" role="tab" aria-controls="abaCertificados" aria-selected="false">
+                    <i class="fa-solid fa-certificate me-1"></i>Certificados Digital
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content pt-3">
@@ -135,6 +145,25 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            <!-- ABA CONTABILIDADE -->
+            <div class="tab-pane fade" id="abaContabilidade" role="tabpanel" aria-labelledby="abaContabilidade-tab">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h2>Contabilidade</h2>
+                    </div>
+                    <div id="contabilidadeConteudo" class="row g-3"></div>
+                </div>
+            </div>
+
+            <!-- ABA CERTIFICADOS DIGITAL -->
+            <div class="tab-pane fade" id="abaCertificados" role="tabpanel" aria-labelledby="abaCertificados-tab">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h2>Certificados Digitais</h2>
+                    </div>
+                    <div id="certificadosConteudo"></div>
                 </div>
             </div>
         </div>
@@ -708,6 +737,8 @@
                         <p>Clique no botão "Nova Empresa" para começar</p>
                     </div>`;
                 preencherSelectChecklist();
+                renderAbaContabilidade();
+                renderAbaCertificados();
                 return;
             }
             empresas.forEach(empresa=>{
@@ -736,6 +767,100 @@
                     </div>`;
             });
             preencherSelectChecklist();
+            renderAbaContabilidade();
+            renderAbaCertificados();
+        }
+
+        // ======= Abas novas: Contabilidade e Certificados
+        function renderAbaContabilidade(){
+            const cont = byId('contabilidadeConteudo'); if(!cont) return;
+            const lista = empresas||[];
+            if(!lista.length){ cont.innerHTML = '<div class="col-12"><p class="text-muted">Nenhuma empresa cadastrada.</p></div>'; return; }
+
+            const hasFlag = (emp, flag)=> (emp?.obrigacoesMensais?.outras||[]).includes(flag);
+            const com = lista.filter(e=> hasFlag(e,'Com Contabilidade'));
+            const sem = lista.filter(e=> hasFlag(e,'Sem Contabilidade'));
+            const nao = lista.filter(e=> !hasFlag(e,'Com Contabilidade') && !hasFlag(e,'Sem Contabilidade'));
+
+            const makeCard = (titulo, itens)=>{
+                return `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>${titulo}</span>
+                                <span class="badge bg-primary">${itens.length}</span>
+                            </div>
+                            <div class="card-body p-0">
+                                ${itens.length ? `<div class="list-group list-group-flush">
+                                    ${itens.map(emp=>`
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>${emp.nome}</strong>
+                                                    <div class="small text-muted">CNPJ: ${emp.cnpj||''}</div>
+                                                </div>
+                                                <span class="badge bg-secondary">${emp.responsavel||'—'}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>` : '<div class="p-3 text-muted">Nenhuma empresa</div>'}
+                            </div>
+                        </div>
+                    </div>`;
+            };
+
+            cont.innerHTML = `${makeCard('Com Contabilidade', com)}${makeCard('Sem Contabilidade', sem)}${nao.length ? makeCard('Não informado', nao) : ''}`;
+        }
+
+        function renderAbaCertificados(){
+            const cont = byId('certificadosConteudo'); if(!cont) return;
+            const lista = empresas||[];
+            if(!lista.length){ cont.innerHTML = '<p class="text-muted">Nenhuma empresa cadastrada.</p>'; return; }
+
+            const itens = lista.map(emp=>{
+                const v = emp.certificadoDigital ? new Date(emp.certificadoDigital) : null;
+                const dias = v ? Math.ceil((v - new Date())/(1000*60*60*24)) : null;
+                let rowClass = '', badgeClass='bg-secondary', status='Não informado';
+                if(v){
+                    if(dias < 0){ rowClass='table-danger'; badgeClass='bg-danger'; status='Vencido'; }
+                    else if(dias <= 30){ rowClass='table-warning'; badgeClass='bg-warning text-dark'; status=`Vence em ${dias} dia(s)`; }
+                    else { rowClass='table-success'; badgeClass='bg-success'; status='OK'; }
+                }
+                return {emp, dias, rowClass, badgeClass, status};
+            }).sort((a,b)=>{
+                const ai = a.dias===null ? Number.POSITIVE_INFINITY : a.dias;
+                const bi = b.dias===null ? Number.POSITIVE_INFINITY : b.dias;
+                return ai - bi;
+            });
+
+            const rows = itens.map(it=>`
+                <tr class="${it.rowClass}">
+                    <td>${it.emp.nome}</td>
+                    <td>${it.emp.cnpj||''}</td>
+                    <td>${formatarData(it.emp.certificadoDigital)}</td>
+                    <td>${it.dias===null ? '—' : it.dias}</td>
+                    <td><span class="badge ${it.badgeClass}">${it.status}</span></td>
+                </tr>
+            `).join('');
+
+            cont.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Empresa</th>
+                                <th>CNPJ</th>
+                                <th>Vencimento</th>
+                                <th>Dias</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         function salvarEmpresa(){
