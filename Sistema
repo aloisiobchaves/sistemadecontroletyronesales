@@ -1168,11 +1168,18 @@
                 const key = `${it.area}|${it.nome}`;
                 const checked = !!estado[key];
                 const id = `ck_${idx}`;
+                const status = estado[`status|${key}`] || 'Pendente';
                 cont.innerHTML += `
                     <label class="check-item" for="${id}">
                         <input class="form-check-input me-1" type="checkbox" id="${id}" ${checked?'checked':''} data-key="${key}">
                         <div>
                             <div><strong>${it.nome}</strong> <small>(${it.area})</small></div>
+                            ${(it.area==='Outras obrigações' && it.nome==='Com Contabilidade') ? `<div class="mt-1">
+                                <select class="form-select form-select-sm" data-key-status="${key}">
+                                    <option value="Escriturado" ${status==='Escriturado'?'selected':''}>Escriturado</option>
+                                    <option value="Pendente" ${status==='Pendente'?'selected':''}>Pendente</option>
+                                </select>
+                            </div>` : ''}
                         </div>
                     </label>`;
             });
@@ -1183,6 +1190,15 @@
                     const k = chk.dataset.key;
                     const cur = carregarEstadoChecklist(emp.id, comp);
                     cur[k] = chk.checked;
+                    salvarEstadoChecklist(emp.id, comp, cur);
+                });
+            });
+            // Listener dos selects de status (apenas para 'Com Contabilidade')
+            cont.querySelectorAll('select[data-key-status]')?.forEach(sel=>{
+                sel.addEventListener('change', ()=>{
+                    const k = `status|${sel.getAttribute('data-key-status')}`;
+                    const cur = carregarEstadoChecklist(emp.id, comp);
+                    cur[k] = sel.value;
                     salvarEstadoChecklist(emp.id, comp, cur);
                 });
             });
@@ -1197,14 +1213,16 @@
         }
         function toggleAllChecklist(flag){
             const emp = getEmpresaSelecionada(); const comp = byId('competencia').value; if(!emp||!comp) return;
-            const obj = {}; document.querySelectorAll('#listaChecklist input[type="checkbox"]').forEach(chk=>{ chk.checked=flag; obj[chk.dataset.key]=flag });
-            salvarEstadoChecklist(emp.id, comp, obj);
+            const cur = carregarEstadoChecklist(emp.id, comp);
+            document.querySelectorAll('#listaChecklist input[type="checkbox"]').forEach(chk=>{ chk.checked=flag; cur[chk.dataset.key]=flag });
+            salvarEstadoChecklist(emp.id, comp, cur);
         }
         function exportarChecklistCSV(){
             const emp = getEmpresaSelecionada(); const comp = byId('competencia').value; if(!emp||!comp) return;
             const estado = carregarEstadoChecklist(emp.id, comp);
             const rows = [['Empresa','CNPJ','Responsável','Competência','Área','Tarefa','Concluída']];
             Object.keys(estado).forEach(k=>{
+                if(k.startsWith('status|')) return;
                 const [area, nome] = k.split('|');
                 rows.push([emp.nome, emp.cnpj, emp.responsavel||'', comp, area, nome, estado[k]?'Sim':'Não']);
             });
@@ -1271,7 +1289,7 @@
                                         <tr><th style=\"width: 160px;\">Área</th><th>Tarefa</th><th style=\"width: 120px;\">Concluída</th></tr>
                                     </thead>
                                     <tbody>
-                                        ${linhas.map(l=>`<tr><td>${l.area}</td><td>${l.nome}</td><td>${l.concluida?'Sim':'Não'}</td></tr>`).join('')}
+                                        ${linhas.map(l=>`<tr><td>${l.area}</td><td>${l.nome}</td><td>${(l.area==='Outras obrigações' && l.nome==='Com Contabilidade') ? (estado['status|Outras obrigações|Com Contabilidade']||'Pendente') : (l.concluida?'Sim':'Não')}</td></tr>`).join('')}
                                     </tbody>
                                 </table>
                             </div>
@@ -1298,7 +1316,8 @@
                 itens.forEach(it=>{
                     const key = `${it.area}|${it.nome}`;
                     const concluida = !!estado[key];
-                    rows.push([emp.nome, emp.cnpj||'', emp.responsavel||'', comp, it.area, it.nome, concluida ? 'Sim' : 'Não']);
+                    const val = (it.area==='Outras obrigações' && it.nome==='Com Contabilidade') ? (estado[`status|${key}`] || 'Pendente') : (concluida ? 'Sim' : 'Não');
+                    rows.push([emp.nome, emp.cnpj||'', emp.responsavel||'', comp, it.area, it.nome, val]);
                     temDados = true;
                 });
             });
