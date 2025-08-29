@@ -1248,31 +1248,30 @@
             const lista = (empresas||[]).filter(e=> normalizarTexto(e.responsavel||'')===filtroNorm);
             if(!lista.length){ cont.innerHTML = '<div class="alert alert-info">Nenhuma empresa encontrada para o responsável selecionado.</div>'; return; }
 
-            let totalGlobal = 0;
             let html = '';
-            html += `<div class="mb-3"><h6 class="mb-1">Relatório de tarefas concluídas</h6><small class="text-muted">Responsável: ${resp} • Competência: ${comp}</small></div>`;
+            html += `<div class=\"mb-3\"><h6 class=\"mb-1\">Relatório do checklist</h6><small class=\"text-muted\">Responsável: ${resp} • Competência: ${comp} • Concluída: Sim/Não conforme marcado</small></div>`;
 
             lista.forEach(emp=>{
                 const itens = coletarItensObrigacoesFromEmpresa(emp);
                 if(!itens.length) return;
                 const estado = carregarEstadoChecklist(emp.id, comp);
-                const concluidas = itens.filter(it=> estado[`${it.area}|${it.nome}`]);
-                if(!concluidas.length) return;
-                totalGlobal += concluidas.length;
+                const linhas = itens.map(it=>({ area: it.area, nome: it.nome, concluida: !!estado[`${it.area}|${it.nome}`] }));
+                const total = linhas.length;
+                const feitas = linhas.filter(l=>l.concluida).length;
                 html += `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div><strong>${emp.nome}</strong> <small class="text-muted">CNPJ: ${emp.cnpj||''}</small></div>
-                                <span class="badge bg-success">${concluidas.length} concluída(s)</span>
+                    <div class=\"card mb-3\">
+                        <div class=\"card-body\">
+                            <div class=\"d-flex justify-content-between align-items-center mb-2\">
+                                <div><strong>${emp.nome}</strong> <small class=\"text-muted\">CNPJ: ${emp.cnpj||''}</small></div>
+                                <span class=\"badge bg-success\">${feitas}/${total} concluída(s)</span>
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-sm mb-0">
+                            <div class=\"table-responsive\">
+                                <table class=\"table table-sm mb-0\">
                                     <thead>
-                                        <tr><th style="width: 160px;">Área</th><th>Tarefa</th></tr>
+                                        <tr><th style=\"width: 160px;\">Área</th><th>Tarefa</th><th style=\"width: 120px;\">Concluída</th></tr>
                                     </thead>
                                     <tbody>
-                                        ${concluidas.map(c=>`<tr><td>${c.area}</td><td>${c.nome}</td></tr>`).join('')}
+                                        ${linhas.map(l=>`<tr><td>${l.area}</td><td>${l.nome}</td><td>${l.concluida?'Sim':'Não'}</td></tr>`).join('')}
                                     </tbody>
                                 </table>
                             </div>
@@ -1280,7 +1279,7 @@
                     </div>`;
             });
 
-            if(totalGlobal===0){ cont.innerHTML = '<div class="alert alert-info">Nenhuma tarefa concluída nesta competência para o responsável selecionado.</div>'; return; }
+            if(!html){ cont.innerHTML = '<div class=\"alert alert-info\">Nenhuma obrigação cadastrada para as empresas deste responsável.</div>'; return; }
             cont.innerHTML = html;
         }
 
@@ -1298,14 +1297,16 @@
                 const estado = carregarEstadoChecklist(emp.id, comp);
                 itens.forEach(it=>{
                     const key = `${it.area}|${it.nome}`;
-                    if(estado[key]){ rows.push([emp.nome, emp.cnpj||'', emp.responsavel||'', comp, it.area, it.nome, 'Sim']); temDados = true; }
+                    const concluida = !!estado[key];
+                    rows.push([emp.nome, emp.cnpj||'', emp.responsavel||'', comp, it.area, it.nome, concluida ? 'Sim' : 'Não']);
+                    temDados = true;
                 });
             });
             if(!temDados){ return; }
             const csv = rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
             const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
             const url = URL.createObjectURL(blob);
-            const nomeArq = `relatorio_concluidas_${resp.replace(/\s+/g,'_')}_${comp}.csv`;
+            const nomeArq = `relatorio_checklist_${resp.replace(/\s+/g,'_')}_${comp}.csv`;
             const a = document.createElement('a'); a.href=url; a.download=nomeArq; a.click();
             URL.revokeObjectURL(url);
         }
