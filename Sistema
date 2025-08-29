@@ -164,6 +164,15 @@
                                     <label class="form-label" for="competenciaContab">Competência</label>
                                     <input type="month" class="form-control" id="competenciaContab">
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="filtroContab">Filtro</label>
+                                    <select class="form-select" id="filtroContab">
+                                        <option value="todos">Todos</option>
+                                        <option value="com">Com Contabilidade</option>
+                                        <option value="sem">Sem Contabilidade</option>
+                                        <option value="nao">Não informado</option>
+                                    </select>
+                                </div>
                                 <div class="col-md-4 text-md-end d-grid d-md-block">
                                     <button class="btn btn-primary me-1" id="btnGerarRelatorioContab"><i class="fa-solid fa-file-lines me-1"></i>Gerar relatório</button>
                                     <button class="btn btn-outline-primary me-1" id="btnExportarRelatorioContabCSV"><i class="fa-solid fa-file-csv me-1"></i>Exportar CSV</button>
@@ -715,6 +724,7 @@
             const btnRelCont = byId('btnGerarRelatorioContab'); if(btnRelCont){ btnRelCont.addEventListener('click', gerarRelatorioContab); }
             const btnRelContCsv = byId('btnExportarRelatorioContabCSV'); if(btnRelContCsv){ btnRelContCsv.addEventListener('click', exportarRelatorioContabCSV); }
             const btnRelContPrint = byId('btnImprimirRelatorioContab'); if(btnRelContPrint){ btnRelContPrint.addEventListener('click', imprimirRelatorioContab); }
+            const selFiltroContab = byId('filtroContab'); if(selFiltroContab){ selFiltroContab.addEventListener('change', renderAbaContabilidade); }
 
             // Dinâmicos: Municipais
             const btnAddMun = byId('btnAddObrigacaoMunicipal'); const inputMun = byId('inputObrigacaoMunicipal');
@@ -840,7 +850,18 @@
                     </div>`;
             };
 
-            cont.innerHTML = `${makeCard('Com Contabilidade', com)}${makeCard('Sem Contabilidade', sem)}${nao.length ? makeCard('Não informado', nao) : ''}`;
+            const filtro = (byId('filtroContab')?.value||'todos');
+            let html = '';
+            if(filtro==='todos'){
+                html = `${makeCard('Com Contabilidade', com)}${makeCard('Sem Contabilidade', sem)}${nao.length ? makeCard('Não informado', nao) : ''}`;
+            }else if(filtro==='com'){
+                html = makeCard('Com Contabilidade', com);
+            }else if(filtro==='sem'){
+                html = makeCard('Sem Contabilidade', sem);
+            }else if(filtro==='nao'){
+                html = nao.length ? makeCard('Não informado', nao) : '';
+            }
+            cont.innerHTML = html || '<div class="col-12"><p class="text-muted">Nenhuma empresa correspondente ao filtro.</p></div>';
         }
 
         function renderAbaCertificados(){
